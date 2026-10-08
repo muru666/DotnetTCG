@@ -1,0 +1,26 @@
+bin/
+obj/
+out/
+publish/
+packages/
+riderModule.iml
+_ReSharper.Caches/
+.vs/
+.vscode/*/.history
+
+# Env and local secrets (never commit real values)
+.env
+.env.local
+*.local.json
+appsettings.*.local.json
+
+# Frontend
+src/DotnetTCG.Frontend/node_modules/
+src/DotnetTCG.Frontend/dist/
+src/DotnetTCG.Frontend/.angular/
+
+# Test artifacts
+TestResults/
+coverage*/
+*.trx
+*.cobertura.xml
