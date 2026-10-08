@@ -1,6 +1,6 @@
 # PokemonTCG (.NET) — TODO
 
-> F0 ✅ hecho (commit `d53d617`). F1 en curso. Leyenda: `[x]` hecho, `[ ]` pendiente.
+> F0 ✅ hecho. F1 ✅ hecho (127 tests, engine ≥90%). Leyenda: `[x]` hecho, `[ ]` pendiente.
 
 ## F1 — Dominio puro TDD (`src/DotnetTCG.Domain`)
 
@@ -32,25 +32,50 @@
       (setup + mulligan + premios + KO + victoria)
 - [x] Cobertura engine ≥90% (`RuleValidator` 97.7%, `DamageCalculator` ~100%, `StatusEffectManager` 100%)
 
-## F2 — Aplicación + Infra (pendiente)
+## F2a — Persistencia + catálogo
 
-- [ ] Entidades EF + migración `Initial` (nada de `ddl-auto=update`)
-- [ ] `DeckService` (60/4/1-básico/AS TÁCTICO/xy1) + `CardService` + `PokeApiClient` con caché
-- [ ] `User/Auth/Recovery` (login 401, refresh corto, throttle, no enumerar)
-- [ ] `LobbyService` separado de `GameExecutionService` (lock fila + `rowversion`,
-      lobby persistido, disconnect 15s → `PAUSED`)
-- [ ] Persistencia diferencial + `GameLog` append-only
+- [ ] Entidades EF + migración `Initial`: `users`, `cards` (TPH), `decks`/`deck_cards`,
+      `games` (lobby + `state_snapshot` JSON + `rowversion`), `game_logs` (append-only).
+      Decisión: snapshot JSON versionado en vez de sync relacional del tablero
+      (mismas garantías con `rowversion`, sin el `delete-all/insert-all` del Java).
+- [ ] `PokeApiClient` (`IHttpClientFactory`, caché, reintentos) + importador idempotente xy1
+      + seed local (se necesita ahora para probar mazos; estaba en F5).
+- [ ] `CardService` (búsqueda paginada acotada) + `DeckService`
+      (60 / max 4 / ≥1 básico / AS TÁCTICO / ownership por usuario).
+- [ ] Tests: servicios con dobles + persistencia contra Postgres real cuando hay Docker
+      disponible (skip explícito si no), nunca `InMemory`.
 
-## F3 — API + SignalR (pendiente)
+## F2b — Identidad (antes que juego: el juego exige `[Authorize]`)
 
-- [ ] REST limpia `/api/v1/...` + FluentValidation + `ProblemDetails`
-- [ ] `GameHub` + `StateProjector` (`Private/Public/Spectator`, no-leak) + authz por recurso
-- [ ] `importar` solo `ADMIN`
+- [ ] `UserService` (BCrypt) + login 401 + access JWT 60min.
+      Refresh rotativo: diferido a post-MVP (superficie grande para el valor que aporta ahora).
+- [ ] `PasswordRecovery` (token hasheado, TTL 15min, un uso, throttle, sin enumerar).
+- [ ] Recorte MVP: amigos/DMs fuera (no puntúan; el bonus de chat se cubre con chat
+      in-game en F3). Recovery de archivos/ImgBB: diferido (foto de perfil no es core).
 
-## F4 — Frontend (pendiente)
+## F2c — Juego aplicado
 
-- [ ] Auth, deck builder (buscar xy1, 0/60), lobby, tablero, panel por fase, log
+- [ ] `LobbyService` (crear/unir con password hasheada, `SelectDeck` con ownership,
+      ready toggle, countdown 3s con reloj/delay abstraídos, solo creador expulsa/configura).
+- [ ] `GameExecutionService`: carga snapshot → `GameEngine` → guarda snapshot + `rowversion`
+      (lock optimista, sin `lock(intern())`), `GameLog` por acción, `Victory`→`FINISHED`.
+- [ ] Desconexión 15s → `PAUSED` + reconexión restaura snapshot. Timers abstraídos (testeables).
 
-## F5 — Hardening (pendiente)
+## F3 — API + SignalR
 
-- [ ] Seed XY1 146 versionado (sin users fijos, CLI `create-admin`), cobertura global ≥80%
+- [ ] REST `/api/v1/...` (auth, decks, cards, games) + FluentValidation + `ProblemDetails`.
+      `importar` solo `ADMIN`.
+- [ ] `GameHub` (lobby + acciones + chat in-game) + `StateProjector`
+      (`Private/Public/Spectator`, no-leak: sin mano rival, orden ni premios ocultos)
+      + authz por recurso (`MemberOfGame`, `DeckOwner`).
+
+## F4 — Frontend
+
+- [ ] Auth, deck builder (buscar xy1, 0/60, validación), lobby, tablero (zonas + mano +
+      premios + estadio), panel por fase, log. Sin tests FE.
+
+## F5 — Hardening
+
+- [ ] Verificar registry vs datos reales xy1 (nombres, flips, bloqueadores con alias).
+- [ ] Seed XY1 146 versionado (sin users fijos, CLI `create-admin`), cobertura global ≥80%.
+- [ ] Post-MVP aparcado: refresh rotativo, amigos/DMs, ImgBB, ranking/historial.
