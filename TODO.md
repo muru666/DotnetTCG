@@ -64,7 +64,8 @@
 ## F3 — API + SignalR
 
 - [ ] REST `/api/v1/...` (auth, decks, cards, games) + FluentValidation + `ProblemDetails`.
-      `importar` solo `ADMIN`.
+      `importar` solo `ADMIN`, manual y por upsert (nunca wipe: `deck_cards` referencia a `cards`;
+      el set xy1 está congelado desde 2018, no necesita scheduler).
 - [ ] `GameHub` (lobby + acciones + chat in-game) + `StateProjector`
       (`Private/Public/Spectator`, no-leak: sin mano rival, orden ni premios ocultos)
       + authz por recurso (`MemberOfGame`, `DeckOwner`).
