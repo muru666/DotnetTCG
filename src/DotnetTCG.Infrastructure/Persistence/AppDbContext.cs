@@ -12,6 +12,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<GameEntity> Games => Set<GameEntity>();
     public DbSet<GamePlayerEntity> GamePlayers => Set<GamePlayerEntity>();
     public DbSet<GameLogEntity> GameLogs => Set<GameLogEntity>();
+    public DbSet<RecoveryTokenEntity> RecoveryTokens => Set<RecoveryTokenEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

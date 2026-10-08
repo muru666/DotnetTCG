@@ -107,3 +107,17 @@ public sealed class GameLogConfiguration : IEntityTypeConfiguration<GameLogEntit
         builder.HasIndex(l => l.GameId);
     }
 }
+
+public sealed class RecoveryTokenConfiguration : IEntityTypeConfiguration<RecoveryTokenEntity>
+{
+    public void Configure(EntityTypeBuilder<RecoveryTokenEntity> builder)
+    {
+        builder.ToTable("password_recovery_tokens");
+        builder.HasKey(t => t.Id);
+        builder.Property(t => t.TokenHash).IsRequired().HasMaxLength(128);
+        builder.HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(t => t.TokenHash).IsUnique();
+        builder.HasIndex(t => t.UserId);
+    }
+}

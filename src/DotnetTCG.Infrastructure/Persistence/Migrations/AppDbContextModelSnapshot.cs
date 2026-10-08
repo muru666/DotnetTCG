@@ -275,6 +275,36 @@ namespace DotnetTCG.Infrastructure.Persistence.Migrations
                     b.ToTable("game_players", (string)null);
                 });
 
+            modelBuilder.Entity("DotnetTCG.Infrastructure.Persistence.Entities.RecoveryTokenEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("password_recovery_tokens", (string)null);
+                });
+
             modelBuilder.Entity("DotnetTCG.Infrastructure.Persistence.Entities.UserEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -388,6 +418,17 @@ namespace DotnetTCG.Infrastructure.Persistence.Migrations
                     b.Navigation("Deck");
 
                     b.Navigation("Game");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DotnetTCG.Infrastructure.Persistence.Entities.RecoveryTokenEntity", b =>
+                {
+                    b.HasOne("DotnetTCG.Infrastructure.Persistence.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

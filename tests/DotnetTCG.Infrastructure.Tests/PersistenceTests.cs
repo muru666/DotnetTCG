@@ -78,8 +78,7 @@ public sealed class CardMapperTests
 }
 
 public sealed class EfRepositoryTests
-{
-    [Fact]
+{    [Fact]
     public async Task Cards_UpsertAndSearch_RoundTrips()
     {
         // Postgres no disponible (sin Docker): se omite.
@@ -138,5 +137,33 @@ public sealed class EfRepositoryTests
 
         var missing = await deckRepo.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
         Assert.Null(missing);
+    }
+
+    [Fact]
+    public async Task Users_RegisterAndRecoveryToken_RoundTrip()
+    {
+        // Postgres no disponible (sin Docker): se omite.
+        if (await TestPostgres.TryOpenAsync() is not (var db, var tx))
+            return;
+        await using var _ = db;
+        await using var _tx = tx;
+        var users = new EfUserRepository(db);
+        var tokens = new EfRecoveryTokenRepository(db);
+
+        var id = Guid.NewGuid();
+        await users.AddAsync(
+            new Application.Users.UserRecord(id, $"u_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@x.test", "hash", "User"),
+            CancellationToken.None);
+        var now = DateTimeOffset.UtcNow;
+        await tokens.SaveAsync(
+            new Application.Common.Interfaces.RecoveryToken(id, "ABC123", now.AddMinutes(15), now),
+            CancellationToken.None);
+
+        Assert.NotNull(await users.GetByIdAsync(id, CancellationToken.None));
+        Assert.NotNull(await tokens.FindByHashAsync("ABC123", CancellationToken.None));
+        Assert.Equal(1, await tokens.CountRecentByUserAsync(id, now.AddHours(-1), CancellationToken.None));
+
+        await tokens.DeleteByHashAsync("ABC123", CancellationToken.None);
+        Assert.Null(await tokens.FindByHashAsync("ABC123", CancellationToken.None));
     }
 }

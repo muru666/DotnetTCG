@@ -45,13 +45,15 @@
 - [x] Tests: servicios con dobles (12), mapper round-trip + repos contra Postgres real con
       rollback (skip si no hay Docker). Total suite: 143 verdes.
 
-## F2b — Identidad (antes que juego: el juego exige `[Authorize]`)
+## F2b — Identidad
 
-- [ ] `UserService` (BCrypt) + login 401 + access JWT 60min.
-      Refresh rotativo: diferido a post-MVP (superficie grande para el valor que aporta ahora).
-- [ ] `PasswordRecovery` (token hasheado, TTL 15min, un uso, throttle, sin enumerar).
-- [ ] Recorte MVP: amigos/DMs fuera (no puntúan; el bonus de chat se cubre con chat
-      in-game en F3). Recovery de archivos/ImgBB: diferido (foto de perfil no es core).
+- [x] `UserService` (registro con validación, BCrypt, `User` por defecto) + login con `Auth.Unauthorized`
+      uniforme (401 en API, sin enumerar) + JWT 60min con claims `sub/unique_name/role` desde DB.
+- [x] `PasswordRecovery`: token aleatorio hasheado SHA256 (nunca en claro), TTL 15min, un uso,
+      throttle 5/hora con historial (bug de `Replace` que borraba el conteo, corregido),
+      `IEmailSender` SMTP (MailKit, fail-fast sin config). Migración `AddPasswordRecovery`.
+- [x] Tests: servicios con dobles + reloj controlable (22), BCrypt/JWT/token-repos (9),
+      persistencia users+recovery contra Postgres. Total suite: 156 verdes.
 
 ## F2c — Juego aplicado
 

@@ -1,5 +1,8 @@
+using DotnetTCG.Application.Auth;
 using DotnetTCG.Application.Common.Interfaces;
+using DotnetTCG.Infrastructure.Auth;
 using DotnetTCG.Infrastructure.Clock;
+using DotnetTCG.Infrastructure.Email;
 using DotnetTCG.Infrastructure.External;
 using DotnetTCG.Infrastructure.Persistence;
 using DotnetTCG.Infrastructure.Persistence.Repositories;
@@ -29,6 +32,12 @@ public static class DependencyInjection
 
         services.AddScoped<ICardRepository, EfCardRepository>();
         services.AddScoped<IDeckRepository, EfDeckRepository>();
+        services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IRecoveryTokenRepository, EfRecoveryTokenRepository>();
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
 
         services.Configure<PokeApiOptions>(configuration.GetSection(PokeApiOptions.SectionName));
         services.AddHttpClient<PokeApiClient>(client =>
