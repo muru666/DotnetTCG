@@ -11,6 +11,16 @@ namespace DotnetTCG.Infrastructure.Persistence.Repositories;
 
 public sealed class EfCardRepository(AppDbContext db) : ICardRepository
 {
+    public async Task<IReadOnlyDictionary<string, Card>> GetByIdsAsync(
+        IEnumerable<string> ids, CancellationToken cancellationToken)
+    {
+        var distinct = ids.Distinct().ToList();
+        var entities = await db.Cards.AsNoTracking()
+            .Where(c => distinct.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+        return entities.ToDictionary(c => c.Id, CardMapper.ToDomain);
+    }
+
     public async Task<Card?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         var entity = await db.Cards.AsNoTracking()

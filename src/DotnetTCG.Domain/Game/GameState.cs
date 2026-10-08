@@ -5,14 +5,14 @@ namespace DotnetTCG.Domain.Game;
 
 public sealed class GameState
 {
-    public GameState(PlayerBoard player0, PlayerBoard player1, int startingPlayerIndex, bool suddenDeath)
+    public GameState(PlayerBoard player0, PlayerBoard player1, int startingPlayerIndex, bool suddenDeath, Guid? id = null)
     {
         ArgumentNullException.ThrowIfNull(player0);
         ArgumentNullException.ThrowIfNull(player1);
         if (startingPlayerIndex is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(startingPlayerIndex));
 
-        Id = Guid.NewGuid();
+        Id = id ?? Guid.NewGuid();
         Players = [player0, player1];
         StartingPlayerIndex = startingPlayerIndex;
         CurrentPlayerIndex = startingPlayerIndex;
@@ -96,6 +96,42 @@ public sealed class GameState
     {
         SetupConfirmed[0] = false;
         SetupConfirmed[1] = false;
+    }
+
+    public void ApplySnapshot(
+        GameStatus status,
+        TurnPhase phase,
+        int currentPlayerIndex,
+        int turnNumber,
+        TrainerCard? stadiumCard,
+        PendingChoice? pendingChoice,
+        PendingAttack? pendingAttack,
+        int? winnerPlayerIndex,
+        int energiesAttached,
+        int supportersPlayed,
+        int stadiumsPlayed,
+        int retreats,
+        int abilitiesUsed,
+        int[] supportersBlockedUntilTurn,
+        int[] mulliganCounts)
+    {
+        Status = status;
+        Phase = phase;
+        CurrentPlayerIndex = currentPlayerIndex;
+        TurnNumber = turnNumber;
+        StadiumCard = stadiumCard;
+        PendingChoice = pendingChoice;
+        PendingAttack = pendingAttack;
+        WinnerPlayerIndex = winnerPlayerIndex;
+        EnergiesAttachedThisTurn = energiesAttached;
+        SupportersPlayedThisTurn = supportersPlayed;
+        StadiumsPlayedThisTurn = stadiumsPlayed;
+        RetreatsThisTurn = retreats;
+        AbilitiesUsedThisTurn = abilitiesUsed;
+        SupportersBlockedUntilTurn[0] = supportersBlockedUntilTurn[0];
+        SupportersBlockedUntilTurn[1] = supportersBlockedUntilTurn[1];
+        MulliganCounts[0] = mulliganCounts[0];
+        MulliganCounts[1] = mulliganCounts[1];
     }
 
     public void RegisterMulligan(int playerIndex) => MulliganCounts[playerIndex]++;

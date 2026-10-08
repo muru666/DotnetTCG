@@ -113,4 +113,26 @@ public sealed class PokemonInPlay
         ClearAllStatuses();
         JustPlayed = true;
     }
+
+    public void Restore(
+        int totalDamage,
+        IEnumerable<EnergyCard> energies,
+        TrainerCard? tool,
+        IEnumerable<Status> statuses,
+        IEnumerable<BoardModifier> modifiers,
+        bool justPlayed,
+        int cannotAttackUntilTurn)
+    {
+        TotalDamage = totalDamage;
+        _attachedEnergies.Clear();
+        _attachedEnergies.AddRange(energies);
+        AttachedTool = tool;
+        _statuses.Clear();
+        foreach (var status in statuses)
+            _statuses.Add(status);
+        _modifiers.Clear();
+        _modifiers.AddRange(modifiers);
+        JustPlayed = justPlayed;
+        CannotAttackUntilTurn = cannotAttackUntilTurn;
+    }
 }

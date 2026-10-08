@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotnetTCG.Application\DotnetTCG.Application.csproj" />
+    <ProjectReference Include="..\..\src\DotnetTCG.Infrastructure\DotnetTCG.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

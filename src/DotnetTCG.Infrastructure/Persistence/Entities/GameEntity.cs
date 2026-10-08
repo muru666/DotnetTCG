@@ -11,7 +11,9 @@ public sealed class GameEntity
     public bool SuddenDeath { get; set; }
     public Guid? WinnerId { get; set; }
     public Guid CreatorId { get; set; }
-    public UserEntity? Creator { get; set; }
+    public int? PreviousStatus { get; set; }
+    public Guid? PausedByUserId { get; set; }
+    public DateTimeOffset? PausedAt { get; set; }    public UserEntity? Creator { get; set; }
     public bool IsPublic { get; set; } = true;
     public bool AcceptsSpectators { get; set; } = true;
     public string? PasswordHash { get; set; }

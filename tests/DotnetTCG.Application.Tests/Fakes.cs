@@ -14,6 +14,11 @@ internal sealed class FakeCardRepository(Dictionary<string, Card>? cards = null)
     public Task<Card?> GetByIdAsync(string id, CancellationToken cancellationToken)
         => Task.FromResult(_cards.GetValueOrDefault(id));
 
+    public Task<IReadOnlyDictionary<string, Card>> GetByIdsAsync(
+        IEnumerable<string> ids, CancellationToken cancellationToken)
+        => Task.FromResult<IReadOnlyDictionary<string, Card>>(
+            ids.Distinct().Where(_cards.ContainsKey).ToDictionary(id => id, id => _cards[id]));
+
     public Task<IReadOnlyList<Card>> SearchAsync(
         string? name, PokemonType? type, int page, int pageSize, CancellationToken cancellationToken)
     {
@@ -119,4 +124,11 @@ internal static class TestCardFactory
         deck["xy1-e"] = 4;
         return deck;
     }
+
+    public static PokemonCard Attacker(string id, string name)
+        => new(id, name, [SubType.Basic], [], "xy1", string.Empty,
+            Hp: 60, RetreatCost: 1, EvolvesFrom: null, PokemonType.Colorless,
+            [new Attack("Tackle", string.Empty, "30", [PokemonType.Colorless])],
+            [], [], []);
+
 }

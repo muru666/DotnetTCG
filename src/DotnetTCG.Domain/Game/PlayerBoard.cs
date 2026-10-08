@@ -17,7 +17,10 @@ public sealed class PlayerBoard
     public PokemonInPlay? Active { get; private set; }
     public IReadOnlyList<PokemonInPlay> Bench => _bench.AsReadOnly();
     public IReadOnlyList<Card> Hand => _hand.AsReadOnly();
+    public IReadOnlyList<Card> DeckCards => _deck.ToList();
     public IReadOnlyList<Card> DiscardPile => _discardPile.AsReadOnly();
+    public IReadOnlyList<Card> PrizeCards => _prizeCards.AsReadOnly();
+    public IReadOnlyList<BoardModifier> Modifiers => _modifiers.AsReadOnly();
     public int DeckCount => _deck.Count;
     public int PrizeCount => _prizeCards.Count;
 
@@ -206,6 +209,26 @@ public sealed class PlayerBoard
         _discardPile.Clear();
         _prizeCards.Clear();
         _modifiers.Clear();
+    }
+
+    public void RestoreState(
+        IEnumerable<Card> hand,
+        IEnumerable<Card> deckInOrder,
+        IEnumerable<Card> discardPile,
+        IEnumerable<Card> prizeCards,
+        PokemonInPlay? active,
+        IEnumerable<PokemonInPlay> bench,
+        IEnumerable<BoardModifier> modifiers)
+    {
+        Reset();
+        _hand.AddRange(hand);
+        foreach (var card in deckInOrder)
+            _deck.Enqueue(card);
+        _discardPile.AddRange(discardPile);
+        _prizeCards.AddRange(prizeCards);
+        Active = active;
+        _bench.AddRange(bench);
+        _modifiers.AddRange(modifiers);
     }
 
     public List<Card> CollectAllCards()

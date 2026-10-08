@@ -170,6 +170,15 @@ namespace DotnetTCG.Infrastructure.Persistence.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset?>("PausedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PausedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("PreviousStatus")
+                        .HasColumnType("integer");
+
                     b.Property<int>("StartingPlayerIndex")
                         .HasColumnType("integer");
 

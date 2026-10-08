@@ -1,6 +1,8 @@
 using DotnetTCG.Application.Auth;
 using DotnetTCG.Application.Cards;
+using DotnetTCG.Application.Common.Interfaces;
 using DotnetTCG.Application.Decks;
+using DotnetTCG.Application.Games;
 using DotnetTCG.Application.Users;
 using DotnetTCG.Domain.Game;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,8 @@ public static class DependencyInjection
         services.AddScoped<DeckService>();
         services.AddScoped<UserService>();
         services.AddScoped<RecoveryService>();
+        services.AddScoped<LobbyService>();
+        services.AddScoped<GameExecutionService>();
         return services;
     }
 }

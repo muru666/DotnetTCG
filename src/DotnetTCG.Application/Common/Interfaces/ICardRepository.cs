@@ -6,6 +6,8 @@ namespace DotnetTCG.Application.Common.Interfaces;
 public interface ICardRepository
 {
     Task<Card?> GetByIdAsync(string id, CancellationToken cancellationToken);
+    Task<IReadOnlyDictionary<string, Card>> GetByIdsAsync(
+        IEnumerable<string> ids, CancellationToken cancellationToken);
     Task<IReadOnlyList<Card>> SearchAsync(
         string? name, PokemonType? type, int page, int pageSize, CancellationToken cancellationToken);
     Task<int> CountAsync(string? name, PokemonType? type, CancellationToken cancellationToken);

@@ -1,9 +1,12 @@
 using DotnetTCG.Application.Auth;
 using DotnetTCG.Application.Common.Interfaces;
+using DotnetTCG.Domain.Engine;
+using DotnetTCG.Domain.Game;
 using DotnetTCG.Infrastructure.Auth;
 using DotnetTCG.Infrastructure.Clock;
 using DotnetTCG.Infrastructure.Email;
 using DotnetTCG.Infrastructure.External;
+using DotnetTCG.Infrastructure.Persistence.Snapshots;
 using DotnetTCG.Infrastructure.Persistence;
 using DotnetTCG.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +22,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<Domain.Game.ICoinFlipService, Game.CoinFlipService>();
 
         var connectionString = configuration.GetConnectionString("Default");
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -31,6 +35,10 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         services.AddScoped<ICardRepository, EfCardRepository>();
+        services.AddScoped<IGameRepository, EfGameRepository>();
+        services.AddScoped<IGameLogRepository, EfGameLogRepository>();
+        services.AddSingleton<IGameSnapshotSerializer, GameSnapshotMapper>();
+        services.AddSingleton(GameEngineFactory.Create);
         services.AddScoped<IDeckRepository, EfDeckRepository>();
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IRecoveryTokenRepository, EfRecoveryTokenRepository>();

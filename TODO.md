@@ -57,11 +57,20 @@
 
 ## F2c — Juego aplicado
 
-- [ ] `LobbyService` (crear/unir con password hasheada, `SelectDeck` con ownership,
-      ready toggle, countdown 3s con reloj/delay abstraídos, solo creador expulsa/configura).
-- [ ] `GameExecutionService`: carga snapshot → `GameEngine` → guarda snapshot + `rowversion`
-      (lock optimista, sin `lock(intern())`), `GameLog` por acción, `Victory`→`FINISHED`.
-- [ ] Desconexión 15s → `PAUSED` + reconexión restaura snapshot. Timers abstraídos (testeables).
+- [x] Snapshot JSON bidireccional (`GameSnapshotMapper`: cartas por id, orden de mazo,
+      pending choices, `Id` preservado) + `IGameSnapshotSerializer` (el compilador atrapó
+      y se corrigió una violación Application→Infrastructure).
+- [x] `LobbyService` (crear/unir con password BCrypt, capacidad 2, `SelectDeck` con ownership
+      + validez, ready con mazo, solo-creador expulsa/configura, salida con transferencia
+      de creador, limpieza de lobbies >24h).
+- [x] `GameExecutionService` (start con validación de mazos + coin flip inicial, acciones con
+      reintento optimista ×3 ante `rowversion`, `GameLog` por acción, mulligan con reintento,
+      pausa/reanudación inmediata — el delay de 15s vive en el hub F3).
+- [x] `IGameRepository`/`IGameLogRepository` EF (transacción + sync de jugadores, `rowversion`
+      xmin) + migración `AddGamePauseFields`. Sin countdown de 3s: el start es inmediato
+      al segundo ready (desvío documentado, cosmético).
+- [x] Tests: lobby (9), ejecución con engine real lobby→setup→partida→`FINISHED` + pausa +
+      retry de concurrencia, snapshot round-trip mid-game. Total suite: 171 verdes.
 
 ## F3 — API + SignalR
 
