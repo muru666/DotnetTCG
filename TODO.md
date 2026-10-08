@@ -17,8 +17,8 @@
       `ProcessBetweenTurns`, cura en banca/evolución
 - [x] `ModifierManager` (en `PokemonInPlay`/`PlayerBoard`: alta, expiración, consulta)
       + `ICoinFlipService` (`RandomNumberGenerator` en Infra / seeded en tests)
-- [ ] `VictoryConditionChecker`: premios → mazo vacío → sin Pokémon + sudden death (1 premio)
-- [ ] `SetupService`: reparto 7, mulligan (rival +1), `PlaceActive/Bench`, `ConfirmSetup`,
+- [x] `VictoryConditionChecker`: premios → mazo vacío → sin Pokémon + sudden death (1 premio)
+- [x] `SetupService`: reparto 7, mulligan (rival +1), `PlaceActive/Bench`, `ConfirmSetup`,
       `FinalizeSetup` (6 premios / 1 en sudden)
 - [ ] `AttackPipeline` CoR (7 pasos + VAR_DMG/FLIP_FAIL/COMPLEX integrados, `AttackContext`
       sin mutación de efectos)

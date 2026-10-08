@@ -31,6 +31,7 @@ public sealed class GameState
     public int StartingPlayerIndex { get; }
     public bool SuddenDeath { get; }
     public int[] MulliganCounts { get; } = [0, 0];
+    public bool[] SetupConfirmed { get; } = [false, false];
     public TrainerCard? StadiumCard { get; private set; }
     public PendingChoice? PendingChoice { get; private set; }
     public int? WinnerPlayerIndex { get; private set; }
@@ -50,6 +51,15 @@ public sealed class GameState
 
     public void SetStatus(GameStatus status) => Status = status;
     public void SetPhase(TurnPhase phase) => Phase = phase;
+    public void SetCurrentPlayer(int playerIndex)
+    {
+        if (playerIndex is < 0 or > 1)
+            throw new ArgumentOutOfRangeException(nameof(playerIndex));
+        CurrentPlayerIndex = playerIndex;
+    }
+
+    public void ConfirmSetup(int playerIndex) => SetupConfirmed[playerIndex] = true;
+    public bool AllSetupConfirmed => SetupConfirmed[0] && SetupConfirmed[1];
 
     public void AdvanceTurn()
     {
