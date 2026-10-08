@@ -34,16 +34,16 @@
 
 ## F2a — Persistencia + catálogo
 
-- [ ] Entidades EF + migración `Initial`: `users`, `cards` (TPH), `decks`/`deck_cards`,
-      `games` (lobby + `state_snapshot` JSON + `rowversion`), `game_logs` (append-only).
-      Decisión: snapshot JSON versionado en vez de sync relacional del tablero
-      (mismas garantías con `rowversion`, sin el `delete-all/insert-all` del Java).
-- [ ] `PokeApiClient` (`IHttpClientFactory`, caché, reintentos) + importador idempotente xy1
-      + seed local (se necesita ahora para probar mazos; estaba en F5).
-- [ ] `CardService` (búsqueda paginada acotada) + `DeckService`
-      (60 / max 4 / ≥1 básico / AS TÁCTICO / ownership por usuario).
-- [ ] Tests: servicios con dobles + persistencia contra Postgres real cuando hay Docker
-      disponible (skip explícito si no), nunca `InMemory`.
+- [x] Entidades EF + migración `Initial`: `users`, `cards` (TPH + blobs jsonb), `decks`/`deck_cards`,
+      `games` (lobby + `state_snapshot` + `rowversion` xmin), `game_logs`. Aplicada y verificada.
+- [x] `PokeApiClient` (`IHttpClientFactory`, reintentos con backoff, `X-Api-Key` opcional) +
+      mapeo xy1 (DCE/Rainbow por nombre; subtipos de energía ignorados a propósito).
+      Test con stub HTTP de payload realista.
+- [x] `CardService` (búsqueda paginada acotada a 100, `ImportSet`) + `DeckService`
+      (CRUD con ownership → `NotFound` uniforme, 60 máx. en construcción, `Validate` con
+      `RuleValidator` + ACE SPEC ≤1) + validadores FluentValidation.
+- [x] Tests: servicios con dobles (12), mapper round-trip + repos contra Postgres real con
+      rollback (skip si no hay Docker). Total suite: 143 verdes.
 
 ## F2b — Identidad (antes que juego: el juego exige `[Authorize]`)
 
