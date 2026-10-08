@@ -1,7 +1,6 @@
 using DotnetTCG.Domain.Cards;
 using DotnetTCG.Domain.Common;
 using DotnetTCG.Domain.Enums;
-
 namespace DotnetTCG.Domain.Game;
 
 public sealed class PlayerBoard
@@ -13,6 +12,7 @@ public sealed class PlayerBoard
     private readonly Queue<Card> _deck = [];
     private readonly List<Card> _discardPile = [];
     private readonly List<Card> _prizeCards = [];
+    private readonly List<BoardModifier> _modifiers = [];
 
     public PokemonInPlay? Active { get; private set; }
     public IReadOnlyList<PokemonInPlay> Bench => _bench.AsReadOnly();
@@ -127,5 +127,22 @@ public sealed class PlayerBoard
     public void ClearActive()
     {
         Active = null;
+    }
+
+    public void AddModifier(BoardModifier modifier)
+    {
+        ArgumentNullException.ThrowIfNull(modifier);
+        _modifiers.Add(modifier);
+    }
+
+    public bool ModifiersBlocked(ModifierType type, int currentTurn)
+        => _modifiers.Any(m => m.Type == type &&
+            (m.Duration != ModifierDuration.UntilNextTurn || currentTurn <= m.TurnApplied));
+
+    public void RemoveExpiredModifiers(int currentTurn)
+    {
+        _modifiers.RemoveAll(m =>
+            m.Duration == ModifierDuration.OneUse ||
+            (m.Duration == ModifierDuration.UntilNextTurn && currentTurn > m.TurnApplied));
     }
 }

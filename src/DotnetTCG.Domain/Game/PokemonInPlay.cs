@@ -86,6 +86,10 @@ public sealed class PokemonInPlay
             (m.Duration == ModifierDuration.UntilNextTurn && currentTurn > m.TurnApplied));
     }
 
+    public bool HasModifier(ModifierType type, int currentTurn)
+        => _modifiers.Any(m => m.Type == type &&
+            (m.Duration != ModifierDuration.UntilNextTurn || currentTurn <= m.TurnApplied));
+
     public void EvolveInto(PokemonCard evolution)
     {
         ArgumentNullException.ThrowIfNull(evolution);

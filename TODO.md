@@ -9,7 +9,7 @@
 - [x] Estado: `PokemonInPlay` (daño exacto sin truncado, `DCE=2` en un solo sitio),
       `PlayerBoard` (banca ≤5, premios, robo con mazo vacío), `GameState`
 - [x] `TurnManager`: `DRAW → MAIN → ATTACK → BETWEEN_TURNS`, primer turno, `ShouldAutoDraw`
-- [ ] `RuleValidator`: `ValidateDeck` (60 / max 4 / ≥1 básico) + reglas `Can*` (energía/supporter/
+- [x] `RuleValidator`: `ValidateDeck` (60 / max 4 / ≥1 básico) + reglas `Can*` (energía/supporter/
       stadium/retreat/habilidad/evolución/ataque, primer turno)
 - [ ] `DamageCalculator`: orden `boost → debilidad ×2 → resistencia −20 → reducción → floor 0`
       + tablas de ignorados + tests
