@@ -13,10 +13,11 @@
       stadium/retreat/habilidad/evolución/ataque, primer turno)
 - [x] `DamageCalculator`: orden `boost → debilidad ×2 → resistencia −20 → reducción → floor 0`
       + `Mist Slash` / `Shadow Circle` / `Fur Coat` + tests
-- [ ] `StatusEffectManager`: 5 estados, exclusión `ASLEEP/CONFUSED/PARA`, `Sweet Veil`,
+- [x] `StatusEffectManager`: 5 estados, exclusión `ASLEEP/CONFUSED/PARA`, `Sweet Veil`,
       `ProcessBetweenTurns`, cura en banca/evolución
+- [x] `ModifierManager` (en `PokemonInPlay`/`PlayerBoard`: alta, expiración, consulta)
+      + `ICoinFlipService` (`RandomNumberGenerator` en Infra / seeded en tests)
 - [ ] `VictoryConditionChecker`: premios → mazo vacío → sin Pokémon + sudden death (1 premio)
-- [ ] `ModifierManager` + `ICoinFlipService` (`RandomNumberGenerator` prod / seeded tests)
 - [ ] `SetupService`: reparto 7, mulligan (rival +1), `PlaceActive/Bench`, `ConfirmSetup`,
       `FinalizeSetup` (6 premios / 1 en sudden)
 - [ ] `AttackPipeline` CoR (7 pasos + VAR_DMG/FLIP_FAIL/COMPLEX integrados, `AttackContext`
