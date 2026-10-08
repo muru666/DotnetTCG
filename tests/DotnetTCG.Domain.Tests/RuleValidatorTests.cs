@@ -238,4 +238,193 @@ public sealed class RuleValidatorTests
 
         Assert.Equal("Ability.OncePerTurn", Rules.CanUseAbility(state, pokemon, "Static")?.Code);
     }
+
+    [Fact]
+    public void CanPlayPokemonToBench_Valid_ReturnsNull()
+    {
+        var state = NewStateWithActive();
+
+        Assert.Null(Rules.CanPlayPokemonToBench(
+            state, 0, TestCards.BasicPokemon("x", "Y", hp: 60)));
+    }
+
+    [Fact]
+    public void CanEvolve_Stage2Target_Blocked()
+    {
+        var state = NewStateWithActive();
+        state.AdvanceTurn();
+        var stage2 = TestCards.Stage1Pokemon("s2", "Stage2", "Raichu", hp: 120) with
+        {
+            Subtypes = [SubType.Stage2],
+        };
+        var target = new PokemonInPlay(stage2) { JustPlayed = false };
+        var evolution = TestCards.Stage1Pokemon("mega", "Mega", "Stage2", hp: 200);
+
+        Assert.Equal("Evolve.MaxStage", Rules.CanEvolve(state, target, evolution)?.Code);
+    }
+
+    [Fact]
+    public void CanEvolve_NameMismatch_Blocked()
+    {
+        var state = NewStateWithActive();
+        state.AdvanceTurn();
+        var evolution = TestCards.Stage1Pokemon("xy1-2", "Raichu", "Other", hp: 90);
+
+        Assert.Equal("Evolve.Mismatch", Rules.CanEvolve(state, state.Players[0].Active!, evolution)?.Code);
+    }
+
+    [Fact]
+    public void CanPlayTrainer_SupportersBlocked_Blocked()
+    {
+        var state = NewStateWithActive();
+        state.BlockSupporters(0, state.TurnNumber);
+
+        Assert.Equal("Trainer.SupporterBlocked",
+            Rules.CanPlayTrainer(state, 0, TestCards.Supporter("s", "Tierno"))?.Code);
+    }
+
+    [Fact]
+    public void CanPlayTrainer_ToolOccupied_Blocked()
+    {
+        var state = NewStateWithActive();
+        var target = state.Players[0].Active!;
+        target.AttachTool(TestCards.Tool("t0", "Tool"));
+
+        Assert.Equal("Trainer.ToolOccupied",
+            Rules.CanPlayTrainer(state, 0, TestCards.Tool("t-1", "Muscle Band"), target)?.Code);
+    }
+
+    [Fact]
+    public void CanPlayTrainer_ItemsRestricted_Blocked()
+    {
+        var state = NewStateWithActive();
+        state.Players[0].AddModifier(new BoardModifier(
+            ModifierType.RestrictItems, "Effect", 0, ModifierDuration.UntilNextTurn, state.TurnNumber));
+
+        Assert.Equal("Trainer.ItemsRestricted",
+            Rules.CanPlayTrainer(state, 0, TestCards.Item("i", "Potion"))?.Code);
+    }
+
+    [Fact]
+    public void CanRetreat_NoActive_Blocked()
+    {
+        var state = new GameState(new PlayerBoard(), new PlayerBoard(), 0, suddenDeath: false);
+
+        Assert.Equal("Retreat.NoActive", Rules.CanRetreat(state, 0, [])?.Code);
+    }
+
+    [Fact]
+    public void CanRetreat_Twice_Blocked()
+    {
+        var state = NewStateWithActive(activeEnergy: 2);
+        state.Players[0].AddToBench(new PokemonInPlay(TestCards.BasicPokemon("b", "B", hp: 60)));
+        state.RegisterRetreat();
+
+        Assert.Equal("Retreat.OncePerTurn",
+            Rules.CanRetreat(state, 0, state.Players[0].Active!.AttachedEnergies.ToList())?.Code);
+    }
+
+    [Fact]
+    public void CanRetreat_Asleep_Blocked()
+    {
+        var state = NewStateWithActive(activeEnergy: 1);
+        state.Players[0].AddToBench(new PokemonInPlay(TestCards.BasicPokemon("b", "B", hp: 60)));
+        state.Players[0].Active!.AddStatus(Status.Asleep);
+
+        Assert.Equal("Retreat.StatusBlocked", Rules.CanRetreat(state, 0, [])?.Code);
+    }
+
+    [Fact]
+    public void CanRetreat_CostUnpaid_Blocked()
+    {
+        var heavy = TestCards.BasicPokemon("h", "Heavy", hp: 100, retreatCost: 2);
+        var state = NewStateWithActive(activeCard: heavy, activeEnergy: 1);
+        state.Players[0].AddToBench(new PokemonInPlay(TestCards.BasicPokemon("b", "B", hp: 60)));
+
+        Assert.Equal("Retreat.CostUnpaid", Rules.CanRetreat(state, 0, [])?.Code);
+    }
+
+    [Fact]
+    public void CanRetreat_DiscardMissing_Blocked()
+    {
+        var heavy = TestCards.BasicPokemon("h", "Heavy", hp: 100, retreatCost: 2);
+        var state = NewStateWithActive(activeCard: heavy, activeEnergy: 2);
+        state.Players[0].AddToBench(new PokemonInPlay(TestCards.BasicPokemon("b", "B", hp: 60)));
+
+        Assert.Equal("Retreat.DiscardMissing", Rules.CanRetreat(state, 0, [])?.Code);
+    }
+
+    [Fact]
+    public void CanRetreat_FairyGardenFree_ReturnsNull()
+    {
+        var fairy = TestCards.BasicPokemon("f", "Fairy", hp: 60, type: PokemonType.Fairy);
+        var state = NewStateWithActive(activeCard: fairy, activeEnergy: 0);
+        state.Players[0].AddToBench(new PokemonInPlay(TestCards.BasicPokemon("b", "B", hp: 60)));
+        state.SetStadium(TestCards.Stadium("st", "Fairy Garden"));
+
+        Assert.Null(Rules.CanRetreat(state, 0, []));
+    }
+
+    [Fact]
+    public void CanAttack_NoActive_Blocked()
+    {
+        var state = new GameState(new PlayerBoard(), new PlayerBoard(), 0, suddenDeath: false);
+        var attack = new Attack("Tackle", string.Empty, "30", [PokemonType.Colorless]);
+
+        Assert.Equal("Attack.NoActive", Rules.CanAttack(state, 0, attack)?.Code);
+    }
+
+    [Fact]
+    public void CanAttack_FirstTurnStarting_Blocked()
+    {
+        var state = NewStateWithActive(activeEnergy: 1);
+        var attack = new Attack("Tackle", string.Empty, "30", [PokemonType.Colorless]);
+
+        Assert.Equal("Attack.FirstTurn", Rules.CanAttack(state, 0, attack)?.Code);
+    }
+
+    [Fact]
+    public void CanAttack_Asleep_Blocked()
+    {
+        var state = NewStateWithActive(activeEnergy: 1);
+        state.AdvanceTurn();
+        state.Players[0].Active!.AddStatus(Status.Asleep);
+        var attack = new Attack("Tackle", string.Empty, "30", [PokemonType.Colorless]);
+
+        Assert.Equal("Attack.StatusBlocked", Rules.CanAttack(state, 0, attack)?.Code);
+    }
+
+    [Fact]
+    public void CanAttack_EffectBlocked_Blocked()
+    {
+        var state = NewStateWithActive(activeEnergy: 1);
+        state.AdvanceTurn();
+        state.Players[0].Active!.CannotAttackUntilTurn = state.TurnNumber;
+        var attack = new Attack("Tackle", string.Empty, "30", [PokemonType.Colorless]);
+
+        Assert.Equal("Attack.Blocked", Rules.CanAttack(state, 0, attack)?.Code);
+    }
+
+    [Fact]
+    public void CanUseAbility_Asleep_Blocked()
+    {
+        var state = NewStateWithActive();
+        var card = TestCards.BasicPokemon("xy1-1", "Pikachu", hp: 60) with
+        {
+            Abilities = [new PokemonAbility("Static", "text", AbilityType.Activated)],
+        };
+        var pokemon = new PokemonInPlay(card);
+        pokemon.AddStatus(Status.Asleep);
+
+        Assert.Equal("Ability.StatusBlocked", Rules.CanUseAbility(state, pokemon, "Static")?.Code);
+    }
+
+    [Fact]
+    public void CanUseAbility_Missing_Blocked()
+    {
+        var state = NewStateWithActive();
+        var pokemon = new PokemonInPlay(TestCards.BasicPokemon("xy1-1", "Pikachu", hp: 60));
+
+        Assert.Equal("Ability.Missing", Rules.CanUseAbility(state, pokemon, "Static")?.Code);
+    }
 }

@@ -185,6 +185,56 @@ public sealed class PlayerBoard
 
     public Card? PeekTop() => _deck.TryPeek(out var card) ? card : null;
 
+    public IReadOnlyList<Card> InspectDeck() => _deck.ToList();
+
+    public bool MoveDiscardToBench(PokemonCard card)
+    {
+        if (_bench.Count >= MaxBenchSize)
+            return false;
+        if (!_discardPile.Remove(card))
+            return false;
+        _bench.Add(new PokemonInPlay(card));
+        return true;
+    }
+
+    public void Reset()
+    {
+        Active = null;
+        _bench.Clear();
+        _hand.Clear();
+        _deck.Clear();
+        _discardPile.Clear();
+        _prizeCards.Clear();
+        _modifiers.Clear();
+    }
+
+    public List<Card> CollectAllCards()
+    {
+        var all = new List<Card>();
+        all.AddRange(_hand);
+        all.AddRange(_deck);
+        all.AddRange(_discardPile);
+        all.AddRange(_prizeCards);
+        foreach (var pokemon in Field())
+        {
+            all.Add(pokemon.Card);
+            all.AddRange(pokemon.AttachedEnergies);
+            if (pokemon.AttachedTool is not null)
+                all.Add(pokemon.AttachedTool);
+        }
+
+        return all;
+    }
+
+    private List<PokemonInPlay> Field()
+    {
+        var field = new List<PokemonInPlay>();
+        if (Active is not null)
+            field.Add(Active);
+        field.AddRange(_bench);
+        return field;
+    }
+
     public void ClearActive()
     {
         Active = null;

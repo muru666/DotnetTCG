@@ -128,13 +128,14 @@ public sealed class AttackPipeline(
     {
         if (behavior?.NeedsBenchTarget is not null && context.SelectedTarget is null)
         {
-            var board = behavior.NeedsBenchTarget == EffectTarget.OwnBench
+            var ownSide = behavior.NeedsBenchTarget == EffectTarget.OwnBench;
+            var board = ownSide
                 ? context.State.Players[context.ActingPlayerIndex]
                 : context.State.OpponentOf(context.ActingPlayerIndex);
             if (board.Bench.Count == 0)
                 return null;
             return new PendingChoice(
-                $"attack:{context.Attack.Name}:{PendingBenchTarget}",
+                $"attack:{context.Attack.Name}:{PendingBenchTarget}:{(ownSide ? "own" : "opp")}",
                 context.ActingPlayerIndex,
                 AbilityName: null,
                 "Choose a benched Pokemon.",

@@ -27,9 +27,10 @@
 - [x] `AbilityRegistry`: 6 habilidades + `Fur Coat` pasiva (contador 1/turno en un solo sitio)
 - [x] `EffectEngine`: 32 `EffectType` (semántica `BACKEND_REBUILD_SPEC.md §6`)
 - [x] `TrainerCardCatalog` / `StadiumCatalog` (constantes + catálogo, sin hardcodes en el engine)
-- [ ] `GameEngine` fachada fina (~200 líneas) + test bot-vs-bot
-      (setup + mulligan + premios + evolución + KO + victoria + sudden)
-- [ ] Cobertura engine ≥90% (`RuleValidator`, `DamageCalculator`, `StatusEffectManager`)
+- [x] `GameEngine` fachada + handlers (`Play/Evolve/Energy/Trainer/Retreat/Attack/Ability/Turn/Choice`)
+      + KO (premios, EX=2, `Destiny Burst`, promoción) + sudden death + test bot-vs-bot
+      (setup + mulligan + premios + KO + victoria)
+- [x] Cobertura engine ≥90% (`RuleValidator` 97.7%, `DamageCalculator` ~100%, `StatusEffectManager` 100%)
 
 ## F2 — Aplicación + Infra (pendiente)
 

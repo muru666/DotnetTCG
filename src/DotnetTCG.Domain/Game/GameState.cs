@@ -29,11 +29,12 @@ public sealed class GameState
     public int CurrentPlayerIndex { get; private set; }
     public int TurnNumber { get; private set; }
     public int StartingPlayerIndex { get; }
-    public bool SuddenDeath { get; }
+    public bool SuddenDeath { get; private set; }
     public int[] MulliganCounts { get; } = [0, 0];
     public bool[] SetupConfirmed { get; } = [false, false];
     public TrainerCard? StadiumCard { get; private set; }
     public PendingChoice? PendingChoice { get; private set; }
+    public PendingAttack? PendingAttack { get; private set; }
     public int? WinnerPlayerIndex { get; private set; }
 
     public int EnergiesAttachedThisTurn { get; private set; }
@@ -86,6 +87,16 @@ public sealed class GameState
     public void SetStadium(TrainerCard stadium) => StadiumCard = stadium;
 
     public void SetPendingChoice(PendingChoice? choice) => PendingChoice = choice;
+
+    public void SetPendingAttack(PendingAttack? attack) => PendingAttack = attack;
+
+    public void MarkSuddenDeath() => SuddenDeath = true;
+
+    public void ResetSetup()
+    {
+        SetupConfirmed[0] = false;
+        SetupConfirmed[1] = false;
+    }
 
     public void RegisterMulligan(int playerIndex) => MulliganCounts[playerIndex]++;
 

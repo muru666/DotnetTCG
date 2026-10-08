@@ -2,6 +2,8 @@ namespace DotnetTCG.Domain.Game;
 
 public sealed record ChoiceOption(string OptionId, string Label, string? ImageUrl = null);
 
+public sealed record PendingAttack(string AttackName, int ActingPlayerIndex);
+
 public sealed record PendingChoice(
     string ChoiceId,
     int PlayerIndex,
