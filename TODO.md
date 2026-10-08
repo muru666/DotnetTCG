@@ -11,8 +11,8 @@
 - [x] `TurnManager`: `DRAW → MAIN → ATTACK → BETWEEN_TURNS`, primer turno, `ShouldAutoDraw`
 - [x] `RuleValidator`: `ValidateDeck` (60 / max 4 / ≥1 básico) + reglas `Can*` (energía/supporter/
       stadium/retreat/habilidad/evolución/ataque, primer turno)
-- [ ] `DamageCalculator`: orden `boost → debilidad ×2 → resistencia −20 → reducción → floor 0`
-      + tablas de ignorados + tests
+- [x] `DamageCalculator`: orden `boost → debilidad ×2 → resistencia −20 → reducción → floor 0`
+      + `Mist Slash` / `Shadow Circle` / `Fur Coat` + tests
 - [ ] `StatusEffectManager`: 5 estados, exclusión `ASLEEP/CONFUSED/PARA`, `Sweet Veil`,
       `ProcessBetweenTurns`, cura en banca/evolución
 - [ ] `VictoryConditionChecker`: premios → mazo vacío → sin Pokémon + sudden death (1 premio)
