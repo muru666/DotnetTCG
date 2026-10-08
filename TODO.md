@@ -72,14 +72,25 @@
 - [x] Tests: lobby (9), ejecución con engine real lobby→setup→partida→`FINISHED` + pausa +
       retry de concurrencia, snapshot round-trip mid-game. Total suite: 171 verdes.
 
-## F3 — API + SignalR
+## F3a — API REST
 
-- [ ] REST `/api/v1/...` (auth, decks, cards, games) + FluentValidation + `ProblemDetails`.
-      `importar` solo `ADMIN`, manual y por upsert (nunca wipe: `deck_cards` referencia a `cards`;
-      el set xy1 está congelado desde 2018, no necesita scheduler).
-- [ ] `GameHub` (lobby + acciones + chat in-game) + `StateProjector`
+## F3a — API REST
+
+- [ ] Auth (`register/login/profile`, recovery `request/validate/reset`; 401 vía `ProblemDetails`),
+      decks CRUD + `validate`, cards (búsqueda paginada + `GET {id}`),
+      `POST cards/import?set=` solo `ADMIN` (manual, por upsert — ver decisión F2a).
+- [ ] Games REST mínimo (lobby crear/unirse/listar, `GET state` proyectado, `POST action`,
+      mulligan, pausa/reanudación) + FluentValidation en todos los inputs.
+- [ ] Tests `WebApplicationFactory`: contrato, 401/403/404, IDOR (mazo/partida ajena),
+      paginación acotada, `import` solo ADMIN.
+
+## F3b — SignalR
+
+- [ ] `GameHub` (lobby en vivo, acciones, `JoinAsSpectator`, chat in-game,
+      `OnDisconnected` + delay 15s → pausa) + `StateProjector`
       (`Private/Public/Spectator`, no-leak: sin mano rival, orden ni premios ocultos)
-      + authz por recurso (`MemberOfGame`, `DeckOwner`).
+      + authz por recurso (`MemberOfGame`; `DeckOwner` ya aplicado en servicios).
+- [ ] Tests no-leak con 3 clientes (P0/P1/espectador).
 
 ## F4 — Frontend
 
