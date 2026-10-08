@@ -124,6 +124,53 @@ public sealed class PlayerBoard
         LoadDeck(combined, shuffle: true, random);
     }
 
+    public Card? RemoveFromDeck(Func<Card, bool> predicate)
+    {
+        var remaining = new Queue<Card>();
+        Card? found = null;
+        while (_deck.Count > 0)
+        {
+            var card = _deck.Dequeue();
+            if (found is null && predicate(card))
+                found = card;
+            else
+                remaining.Enqueue(card);
+        }
+
+        while (remaining.Count > 0)
+            _deck.Enqueue(remaining.Dequeue());
+        return found;
+    }
+
+    public void ShuffleDeck(Random random)
+    {
+        var cards = _deck.ToList();
+        _deck.Clear();
+        LoadDeck(cards, shuffle: true, random);
+    }
+
+    public void DiscardHand()
+    {
+        _discardPile.AddRange(_hand);
+        _hand.Clear();
+    }
+
+    public void MillTop(int count)
+    {
+        for (var i = 0; i < count && _deck.Count > 0; i++)
+            _discardPile.Add(_deck.Dequeue());
+    }
+
+    public Card? RecycleFirst()
+    {
+        if (_discardPile.Count == 0)
+            return null;
+        var card = _discardPile[0];
+        _discardPile.RemoveAt(0);
+        _hand.Add(card);
+        return card;
+    }
+
     public void ClearActive()
     {
         Active = null;

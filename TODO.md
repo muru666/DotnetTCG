@@ -24,7 +24,7 @@
       sin mutación de efectos)
 - [ ] `AttackRegistry`: 21 `VAR_DMG` (tabla de fórmulas) + `Hyper Fang` + 37 `COMPLEX`
 - [ ] `AbilityRegistry`: 6 habilidades + `Fur Coat` pasiva (contador 1/turno en un solo sitio)
-- [ ] `EffectEngine`: 32 `EffectType` (semántica `BACKEND_REBUILD_SPEC.md §6`)
+- [x] `EffectEngine`: 32 `EffectType` (semántica `BACKEND_REBUILD_SPEC.md §6`)
 - [ ] `TrainerCardCatalog` / `StadiumCatalog` (sin hardcodes en el engine)
 - [ ] `GameEngine` fachada fina (~200 líneas) + test bot-vs-bot
       (setup + mulligan + premios + evolución + KO + victoria + sudden)

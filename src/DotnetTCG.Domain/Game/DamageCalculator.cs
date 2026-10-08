@@ -41,6 +41,9 @@ public sealed class DamageCalculator
             .Where(m => m.Type == ModifierType.DamageReduction)
             .Sum(m => m.Value);
 
+        if (input.Defender.Modifiers.Any(m => m.Type == ModifierType.PreventDamage))
+            return 0;
+
         if (input.Defender.Card.Abilities.Any(a => a.Name == "Fur Coat"))
             damage -= FurCoatReduction;
 

@@ -60,6 +60,8 @@ public sealed class PokemonInPlay
         return discarded;
     }
 
+    public bool DetachEnergy(EnergyCard energy) => _attachedEnergies.Remove(energy);
+
     public void AttachTool(TrainerCard tool)
     {
         ArgumentNullException.ThrowIfNull(tool);
