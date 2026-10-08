@@ -79,7 +79,7 @@ public sealed class DamageCalculator
     }
 
     private static bool IsShadowCircleActive(DamageCalculationInput input)
-        => input.StadiumCard?.Name == "Shadow Circle"
+        => input.StadiumCard?.Name == Catalogs.StadiumNames.ShadowCircle
             && input.Attacker.Card.PokemonType == PokemonType.Darkness;
 
     private static int ParseMultiplier(string multiplier)

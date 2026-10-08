@@ -17,6 +17,8 @@ public sealed class EffectEngine(
 
         if (spec.FlipToActivate && !coinFlip.FlipHeads())
             return;
+        if (spec.ApplyOnTailsOnly && coinFlip.FlipHeads())
+            return;
 
         switch (spec.Type)
         {
@@ -30,13 +32,13 @@ public sealed class EffectEngine(
                 context.Source?.AddDamage(spec.Amount);
                 break;
             case EffectType.Draw:
-                DrawCards(context.State.Players[context.ActingPlayerIndex], spec.Amount);
+                DrawCards(DrawTargetBoard(context, spec), spec.Amount);
                 break;
             case EffectType.DiscardEnergy:
-                ApplyToTargets(context, spec, t => DiscardEnergies(t, spec));
+                ApplyToTargets(context, spec, t => DiscardAttached(context, t, spec));
                 break;
             case EffectType.ShuffleHand:
-                context.State.Players[context.ActingPlayerIndex].ShuffleHandIntoDeck(random);
+                TargetPlayerBoard(context, spec).ShuffleHandIntoDeck(random);
                 break;
             case EffectType.DiscardOpponentHand:
                 DiscardOpponentHand(context, spec.Amount);
@@ -45,7 +47,8 @@ public sealed class EffectEngine(
                 context.State.Players[context.ActingPlayerIndex].DiscardHand();
                 break;
             case EffectType.SearchEnergy:
-                SearchAndTake(context, c => IsEnergyMatch(c, spec.EnergyType));
+                SearchMultiple(context, c => IsEnergyMatch(c, spec.EnergyType),
+                    spec.Amount <= 0 ? 1 : spec.Amount);
                 break;
             case EffectType.HealAll:
                 foreach (var pokemon in OwnField(context))
@@ -55,7 +58,7 @@ public sealed class EffectEngine(
                 SwitchOwnActive(context);
                 break;
             case EffectType.SearchPokemon:
-                SearchAndTake(context, c => c is PokemonCard);
+                SearchMultiple(context, c => c is PokemonCard, spec.Amount <= 0 ? 1 : spec.Amount);
                 break;
             case EffectType.Revive:
                 Revive(context);
@@ -67,7 +70,7 @@ public sealed class EffectEngine(
                 ApplyToTargets(context, spec, t => t.AddDamage(spec.Amount * 10));
                 break;
             case EffectType.DrawUntil:
-                DrawUntil(context, spec.Amount);
+                DrawUntil(context, spec);
                 break;
             case EffectType.MoveEnergy:
                 MoveEnergy(context, spec);
@@ -76,7 +79,7 @@ public sealed class EffectEngine(
                 ForceOpponentSwitch(context);
                 break;
             case EffectType.DiscardAll:
-                ApplyToTargets(context, spec, t => DiscardEnergies(t, spec with { Amount = int.MaxValue }));
+                ApplyToTargets(context, spec, t => DiscardAttached(context, t, spec with { Amount = int.MaxValue }));
                 break;
             case EffectType.RemoveStatus:
                 ApplyToTargets(context, spec, t => t.ClearAllStatuses());
@@ -113,10 +116,12 @@ public sealed class EffectEngine(
                     ModifierType.PreventDamage, PreventAllValue, ModifierDuration.UntilNextTurn);
                 break;
             case EffectType.SearchAny:
-                SearchAndTake(context, c => spec.CardName == null || c.Name == spec.CardName);
+                SearchAndTake(context, c =>
+                    (spec.CardName == null || c.Name == spec.CardName) &&
+                    (spec.TrainerSubtype == null || c.Subtypes.Contains(spec.TrainerSubtype.Value)));
                 break;
             case EffectType.Recycle:
-                context.State.Players[context.ActingPlayerIndex].RecycleFirst();
+                Recycle(context, spec.Amount <= 0 ? 1 : spec.Amount);
                 break;
             case EffectType.FlipCoin:
                 break;
@@ -220,27 +225,37 @@ public sealed class EffectEngine(
         }
     }
 
-    private void DrawUntil(EffectContext context, int handSize)
+    private void DrawUntil(EffectContext context, EffectSpec spec)
     {
-        var board = context.State.Players[context.ActingPlayerIndex];
-        while (board.Hand.Count < handSize)
+        var board = DrawTargetBoard(context, spec);
+        while (board.Hand.Count < spec.Amount)
         {
             if (board.DrawCard().IsFailure)
                 break;
         }
     }
 
+    private static PlayerBoard DrawTargetBoard(EffectContext context, EffectSpec? spec)
+        => spec?.Target == EffectTarget.OpponentPlayer
+            ? context.State.OpponentOf(context.ActingPlayerIndex)
+            : context.State.Players[context.ActingPlayerIndex];
+
     private void SearchAndTake(EffectContext context, Func<Card, bool> predicate)
     {
+        SearchMultiple(context, predicate, 1);
+    }
+
+    private void SearchMultiple(EffectContext context, Func<Card, bool> predicate, int count)
+    {
         var board = context.State.Players[context.ActingPlayerIndex];
-        var found = board.RemoveFromDeck(predicate);
-        if (found is null)
+        for (var i = 0; i < count; i++)
         {
-            board.ShuffleDeck(random);
-            return;
+            var found = board.RemoveFromDeck(predicate);
+            if (found is null)
+                break;
+            board.AddToHand(found);
         }
 
-        board.AddToHand(found);
         board.ShuffleDeck(random);
     }
 
@@ -268,6 +283,31 @@ public sealed class EffectEngine(
         if (opponent.Active is null || replacement is null)
             return;
         opponent.SwitchActive(replacement);
+    }
+
+    private static void DiscardAttached(EffectContext context, PokemonInPlay target, EffectSpec spec)
+    {
+        var energies = target.AttachedEnergies
+            .Where(e => spec.EnergyType == null || e.EnergyType == spec.EnergyType)
+            .Take(spec.Amount)
+            .ToList();
+        if (energies.Count == 0)
+            return;
+
+        var owner = OwnerBoardOf(context, target);
+        foreach (var energy in energies)
+        {
+            target.DetachEnergy(energy);
+            owner.Discard(energy);
+        }
+    }
+
+    private static PlayerBoard OwnerBoardOf(EffectContext context, PokemonInPlay target)
+    {
+        var own = context.State.Players[context.ActingPlayerIndex];
+        if (own.Active == target || own.Bench.Contains(target))
+            return own;
+        return context.State.OpponentOf(context.ActingPlayerIndex);
     }
 
     private static void DiscardEnergies(PokemonInPlay target, EffectSpec spec)
@@ -319,10 +359,35 @@ public sealed class EffectEngine(
 
     private void AddPlayerModifier(EffectContext context, ModifierType type, EffectSpec spec)
     {
-        var board = spec.Target is EffectTarget.OpponentPlayer or EffectTarget.AllOpponents or EffectTarget.OpponentActive or EffectTarget.OpponentBench
+        TargetPlayerBoard(context, spec).AddModifier(new BoardModifier(
+            type, "Effect", 0, ModifierDuration.UntilNextTurn, context.State.TurnNumber));
+    }
+
+    private static PlayerBoard TargetPlayerBoard(EffectContext context, EffectSpec spec)
+        => spec.Target is EffectTarget.OpponentPlayer or EffectTarget.AllOpponents
+            or EffectTarget.OpponentActive or EffectTarget.OpponentBench
             ? context.State.OpponentOf(context.ActingPlayerIndex)
             : context.State.Players[context.ActingPlayerIndex];
-        board.AddModifier(new BoardModifier(type, "Effect", 0, ModifierDuration.UntilNextTurn, context.State.TurnNumber));
+
+    private static void Recycle(EffectContext context, int count)
+    {
+        var board = context.State.Players[context.ActingPlayerIndex];
+        for (var i = 0; i < count; i++)
+        {
+            if (board.RecycleFirst() is null)
+                break;
+        }
+    }
+
+    public void AttachFromDeck(EffectContext context, PokemonType? energyType, PokemonInPlay destination)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(destination);
+        var board = context.State.Players[context.ActingPlayerIndex];
+        var found = board.RemoveFromDeck(c => IsEnergyMatch(c, energyType));
+        if (found is EnergyCard energy)
+            destination.AttachEnergy(energy);
+        board.ShuffleDeck(random);
     }
 
     private void AddPokemonModifier(

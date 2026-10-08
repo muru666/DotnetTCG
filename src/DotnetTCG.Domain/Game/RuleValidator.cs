@@ -171,7 +171,7 @@ public sealed class RuleValidator
 
     private static bool IsFreeRetreat(GameState state, PokemonInPlay active)
     {
-        return state.StadiumCard?.Name == "Fairy Garden"
+        return state.StadiumCard?.Name == Catalogs.StadiumNames.FairyGarden
             && active.Card.PokemonType == PokemonType.Fairy;
     }
 }

@@ -70,6 +70,20 @@ public sealed class PokemonInPlay
         AttachedTool = tool;
     }
 
+    public TrainerCard? RemoveTool()
+    {
+        var tool = AttachedTool;
+        AttachedTool = null;
+        return tool;
+    }
+
+    public void ReduceToHp(int hpRemaining)
+    {
+        var excess = HpRemaining - hpRemaining;
+        if (excess > 0)
+            AddDamage(excess);
+    }
+
     public void AddStatus(Status status) => _statuses.Add(status);
     public bool HasStatus(Status status) => _statuses.Contains(status);
     public void RemoveStatus(Status status) => _statuses.Remove(status);

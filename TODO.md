@@ -20,12 +20,13 @@
 - [x] `VictoryConditionChecker`: premios → mazo vacío → sin Pokémon + sudden death (1 premio)
 - [x] `SetupService`: reparto 7, mulligan (rival +1), `PlaceActive/Bench`, `ConfirmSetup`,
       `FinalizeSetup` (6 premios / 1 en sudden)
-- [ ] `AttackPipeline` CoR (7 pasos + VAR_DMG/FLIP_FAIL/COMPLEX integrados, `AttackContext`
-      sin mutación de efectos)
-- [ ] `AttackRegistry`: 21 `VAR_DMG` (tabla de fórmulas) + `Hyper Fang` + 37 `COMPLEX`
-- [ ] `AbilityRegistry`: 6 habilidades + `Fur Coat` pasiva (contador 1/turno en un solo sitio)
+- [x] `AttackPipeline` CoR (variable → flip-fail → energía → confusión → selecciones →
+      prerequisitos → daño → post-efectos → complex, reanudable vía `PendingChoice`)
+- [x] `AttackRegistry`: 21 `VAR_DMG` + `Hyper Fang` + 37 `COMPLEX` (fallback a daño base si el
+      nombre es desconocido; bloqueadores con alias a verificar en F5)
+- [x] `AbilityRegistry`: 6 habilidades + `Fur Coat` pasiva (contador 1/turno en un solo sitio)
 - [x] `EffectEngine`: 32 `EffectType` (semántica `BACKEND_REBUILD_SPEC.md §6`)
-- [ ] `TrainerCardCatalog` / `StadiumCatalog` (sin hardcodes en el engine)
+- [x] `TrainerCardCatalog` / `StadiumCatalog` (constantes + catálogo, sin hardcodes en el engine)
 - [ ] `GameEngine` fachada fina (~200 líneas) + test bot-vs-bot
       (setup + mulligan + premios + evolución + KO + victoria + sudden)
 - [ ] Cobertura engine ≥90% (`RuleValidator`, `DamageCalculator`, `StatusEffectManager`)

@@ -9,7 +9,9 @@ public sealed record EffectSpec(
     Status? Status = null,
     PokemonType? EnergyType = null,
     string? CardName = null,
-    bool FlipToActivate = false);
+    SubType? TrainerSubtype = null,
+    bool FlipToActivate = false,
+    bool ApplyOnTailsOnly = false);
 
 public sealed record EffectContext(
     GameState State,

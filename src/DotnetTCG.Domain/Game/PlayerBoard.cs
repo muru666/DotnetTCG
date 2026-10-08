@@ -171,6 +171,20 @@ public sealed class PlayerBoard
         return card;
     }
 
+    public IReadOnlyList<Card> TakeFromDiscard(Func<Card, bool> predicate, int count)
+    {
+        var taken = _discardPile.Where(predicate).Take(count).ToList();
+        foreach (var card in taken)
+        {
+            _discardPile.Remove(card);
+            _hand.Add(card);
+        }
+
+        return taken;
+    }
+
+    public Card? PeekTop() => _deck.TryPeek(out var card) ? card : null;
+
     public void ClearActive()
     {
         Active = null;

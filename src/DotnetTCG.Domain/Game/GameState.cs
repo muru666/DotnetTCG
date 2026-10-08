@@ -89,6 +89,9 @@ public sealed class GameState
 
     public void RegisterMulligan(int playerIndex) => MulliganCounts[playerIndex]++;
 
+    public void BlockSupporters(int playerIndex, int untilTurn) =>
+        SupportersBlockedUntilTurn[playerIndex] = untilTurn;
+
     public void Finish(int? winnerPlayerIndex)
     {
         Status = GameStatus.Finished;
