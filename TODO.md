@@ -108,9 +108,35 @@
 > y `attach/attack/pendingChoice` ya están ejecutados end-to-end en `Api.Tests`
 > → sirven de guion de implementación de UI y de fuente de verdad de payloads.
 
-- [ ] Auth (guard + login/register/recovery), deck builder (buscar xy1, 0/60, validate),
-      lobby (crear/unirse/ready), tablero (zonas + mano + premios + estadio + pendingChoice),
-      panel por fase, log. Sin tests FE (regla acordada).
+> Contrato visual: estética TCG moderna y limpia, sin reproducir una interfaz comercial.
+> Fondo oscuro (carbón/azul grisáceo), paneles por variación sutil de superficie,
+> acento azul eléctrico/medio solo en acciones principales. El color es dato
+> (energía/tipo/condición especial), nunca decoración; el resto monocromático.
+> Sans-serif legible, bordes/sombras/radios consistentes, cartas distinguibles
+> de sus paneles. Estados hover/focus/selected/disabled/loading coherentes.
+> Sin gradientes excesivos, vidrio, partículas ni animaciones complejas
+> (transiciones funcionales cortas + `prefers-reduced-motion`).
+> Layout en grid que colapsa a una columna en móvil, mano siempre visible.
+> Stack: CSS vanilla con custom properties (sin frameworks CSS).
+
+- [ ] F4.0 Base: tokens en `styles.css`, `provideHttpClient()` + interceptor JWT
+      (token en `localStorage`: pragmático para proyecto personal sin refresh;
+      documentado como tradeoff) + mapeo central de errores, `core/auth` (sesión),
+      rutas (`/login /register /recovery /decks /decks/:id /lobby /games/:id` + 404)
+      con guards solo-UX, shell/layout. Paquete nuevo: `@microsoft/signalr`.
+- [ ] F4.1 Auth: login/register/recovery con Reactive Forms + validación de UX
+      (el backend manda), estados loading/error explícitos.
+- [ ] F4.2 Mazos: listar/crear/editar/borrar, builder (buscar `/v1/cards`,
+      agregar/quitar, contador 0/60, límites visibles, `POST validate`).
+- [ ] F4.3 Lobby por SignalR (`/hubs/game` + `?access_token=`): crear/unirse
+      (password), seleccionar mazo, ready, start → navegar a `/games/:id`.
+- [ ] F4.4 Tablero por SignalR: zonas en grid (activo/banca/mano/premios/descarte/
+      estadio rival y propio), mano propia completa (la rival solo conteo, ya lo
+      garantiza el proyector), panel de acciones por fase + `pendingChoice`,
+      mulligan, conceder, pausa, log y chat.
+- [ ] DoD F4: `ng build` + lint verdes, walkthrough manual de cada flujo contra
+      backend con catálogo cargado (prerrequisito: `POST /v1/cards/import?set=xy1`
+      con usuario ADMIN), sin `any`/casts inseguros, teclado + foco revisados.
 
 ## F5 — Hardening
 
