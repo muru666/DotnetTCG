@@ -87,18 +87,18 @@
 
 ## F3b — SignalR
 
-> Adaptación por la base de tests: la **proyección** (`StateProjector`) ya está cubierta
-> determinísticamente (`StateProjectorTests`: viewer0/1/espectador/sin-leak de `PendingChoice`)
-> y el contrato REST de partida completo ya está probado. El hub solo debe probar
-> **transporte + authz + delay** — no re-testear reglas ni proyección.
-
-- [ ] `GameHub`: `JoinLobby/ExecuteAction/JoinAsSpectator/SendChat`, auth de conexión,
-      autorización de grupos por membresía (`MemberOfGame`), broadcast
-      `action-result` → grupo y estado a `Clients.User` (reusa `StateProjector`).
-- [ ] `OnDisconnected` → delay 15s (reloj/delay abstraídos) → `PauseAsync` (ya testeados).
-- [ ] Tests del hub: auth rechazada, miembro vs no-miembro en grupo, orden de broadcast,
-      disconnect → pausa. El no-leak en vivo se verifica una vez con 3 clientes
-      (P0/P1/espectador) — la semántica ya está garantizada por los tests del proyector.
+- [x] `GameHub` (`JoinLobby/LeaveLobby/SelectDeck/SetReady/StartGame/ExecuteAction/Mulligan/`
+      `PauseGame/Reconnect/JoinAsSpectator/SendChat`, auth por `?access_token=`,
+      `OnDisconnected` + 15s (reloj abstraído) → pausa, evento explícito `game-paused`).
+- [x] Broadcast ordenado: `action-result` completo al actor + sanitizado (`PendingChoice=null`)
+      al resto, estados personalizados por `Clients.User` (reusa `StateProjector`),
+      `game-started/game-paused/lobby/chat`, errores al caller (`"error"` con código).
+- [x] Authz por membresía en cada método + grupos por juego. Fix real encontrado por tests:
+      el fire-and-forget del disconnect usaba servicios scoped dispuestos → scope propio
+      vía `IServiceScopeFactory`.
+- [x] Tests (7): 401 sin token, flujo miembros+espectador con no-leak, no-miembro rechazado,
+      disconnect→pausa con `FakeTimeProvider`, ciclo lobby por hub, espectador privado
+      rechazado, chat inválido. Total suite: 403 verdes, global 90.1%.
 
 ## F4 — Frontend
 
