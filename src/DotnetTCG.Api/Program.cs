@@ -60,18 +60,18 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod()
         .AllowCredentials()));
 
+var pathBase = builder.Configuration.GetValue<string>("PathBase");
 var app = builder.Build();
+
+if (!string.IsNullOrWhiteSpace(pathBase))
+{
+    app.UsePathBase(pathBase);
+}
 
 app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-
-var pathBase = builder.Configuration.GetValue<string>("PathBase");
-if (!string.IsNullOrWhiteSpace(pathBase))
-{
-    app.UsePathBase(pathBase);
-}
 
 if (app.Environment.IsDevelopment())
 {

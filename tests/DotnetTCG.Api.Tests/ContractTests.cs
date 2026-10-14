@@ -80,9 +80,11 @@ public sealed class ContractTests
         var created = await client.PostAsJsonAsync("/v1/decks", new { name = $"D-{Guid.NewGuid():N}" });
         created.EnsureSuccessStatusCode();
         var deckId = (await created.Content.ReadFromJsonAsync<DeckIdDto>())!.Id;
+        // Mazo 30 pokémon + 30 energías: alta prob. de básica y de energía en mano,
+        // sin depender del azar del barajado (3 copias ≤ 4 por nombre; básicas ilimitadas).
         for (var i = 0; i < 10; i++)
-            await client.PostAsJsonAsync($"/v1/decks/{deckId}/cards", new { cardId = $"txy-a{i}", quantity = 4 });
-        await client.PostAsJsonAsync($"/v1/decks/{deckId}/cards", new { cardId = "txy-e", quantity = 20 });
+            await client.PostAsJsonAsync($"/v1/decks/{deckId}/cards", new { cardId = $"txy-a{i}", quantity = 3 });
+        await client.PostAsJsonAsync($"/v1/decks/{deckId}/cards", new { cardId = "txy-e", quantity = 30 });
         var validated = await client.PostAsJsonAsync($"/v1/decks/{deckId}/validate", new { });
         validated.EnsureSuccessStatusCode();
         return deckId;
@@ -268,27 +270,32 @@ public sealed class ContractTests
         Assert.True(view.Boards[1].HandCount > 0);
         Assert.NotNull(view.Boards[0].Hand);
 
-        // Esperar un turno en que el jugador activo tenga una Energía en mano
-        // (el mazo está barajado: no se asume composición de la mano inicial).
-        var acting = p0;
-        var actingOrder = view.CurrentPlayerIndex;
+        // Esperar un turno en que el jugador activo tenga una Energía en mano.
+        // El estado se pide SIEMPRE con el cliente del jugador activo: la mano
+        // propia es visible, la del rival nunca (por eso no se lee con p0).
         CardView? energy = null;
-        for (var turn = 0; turn < 15 && energy is null; turn++)
+        var actingOrder = view.CurrentPlayerIndex;
+        for (var turn = 0; turn < 20 && energy is null; turn++)
         {
-            var state = await p0.GetFromJsonAsync<GameStateView>($"/v1/games/{gameId}/state");
-            acting = state!.CurrentPlayerIndex == 0 ? p0 : p1;
-            actingOrder = state.CurrentPlayerIndex;
-            energy = state.Boards[actingOrder].Hand!.FirstOrDefault(c => c.Supertype == "Energy");
+            var acting = actingOrder == 0 ? p0 : p1;
+            var state = await acting.GetFromJsonAsync<GameStateView>($"/v1/games/{gameId}/state");
+            actingOrder = state!.CurrentPlayerIndex;
+            var active = actingOrder == 0 ? p0 : p1;
+            if (active != acting)
+                state = await active.GetFromJsonAsync<GameStateView>($"/v1/games/{gameId}/state");
+
+            energy = state!.Boards[actingOrder].Hand!.FirstOrDefault(c => c.Supertype == "Energy");
             if (energy is null)
             {
-                var pass = await acting.PostAsJsonAsync($"/v1/games/{gameId}/actions",
+                var pass = await active.PostAsJsonAsync($"/v1/games/{gameId}/actions",
                     new { type = "PassTurn" });
                 pass.EnsureSuccessStatusCode();
             }
         }
 
         Assert.NotNull(energy);
-        var attach = await acting.PostAsJsonAsync($"/v1/games/{gameId}/actions",
+        var attachActor = actingOrder == 0 ? p0 : p1;
+        var attach = await attachActor.PostAsJsonAsync($"/v1/games/{gameId}/actions",
             new { type = "AttachEnergy", cardId = energy.Id, target = new { zone = "active", index = 0 } });
         attach.EnsureSuccessStatusCode();
 
