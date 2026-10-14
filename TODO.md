@@ -166,7 +166,8 @@
 
 - [x] Seed XY1 146 versionado: `data/xy1.json` (payload crudo de la API, commiteado) +
       `dotnet run -- seed-cards <path>` (migra + upsert idempotente, verificado: 146/146).
-      Ya no se llama a la API para seedear. Resta: CLI `create-admin`.
+      Ya no se llama a la API para seedear. Política: el seed sale del archivo;
+      el import en vivo queda solo para sets futuros. Resta: CLI `create-admin`.
 - [ ] Verificar registry vs datos reales xy1: test de integración que importe el set
       y afirme que los nombres de ataques/habilidades/estadios xy1 mapean a behaviors
       (los `Aliases`/fallback quedan medidos, no asumidos).

@@ -4,7 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, debounceTime, distinctUntilChanged, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, merge, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { toApiError } from '../../../core/http/api-error';
 import { SoundService } from '../../../core/sound/sound';
 import { CardsApi } from '../data-access/cards.api';
@@ -77,7 +77,7 @@ type BuilderState =
                 placeholder="Nombre…"
               />
               <label class="visually-hidden" for="type-filter">Tipo</label>
-              <select id="type-filter" (change)="cardType.set(typeSelect.value)" #typeSelect>
+              <select id="type-filter" (change)="onTypeChange(typeSelect.value)" #typeSelect>
                 @for (type of typeFilters; track type) {
                   <option [value]="type">{{ type === 'all' ? 'Todos' : type }}</option>
                 }
@@ -342,6 +342,7 @@ export class DeckBuilderPage {
   protected readonly preview = signal<string | null>(null);
 
   protected readonly searchControl = new FormControl('', { nonNullable: true });
+  private readonly typeChanged = new Subject<void>();
 
   protected readonly totalCards = computed(() =>
     this.deck()?.cards.reduce((total, card) => total + card.quantity, 0) ?? 0,
@@ -376,19 +377,40 @@ export class DeckBuilderPage {
         this.state.set({ kind: 'ready' });
       });
 
-    this.searchControl.valueChanges
+    merge(
+      this.searchControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()),
+      this.typeChanged.asObservable(),
+    )
       .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
+        startWith(null),
+        tap(() => this.searching.set(true)),
+        switchMap(() => {
+          const name = this.searchControl.value.trim();
+          return this.cardsApi
+            .search(name.length > 0 ? name : null, this.cardType(), 0, PAGE_SIZE)
+            .pipe(
+              catchError(() => {
+                this.sound.playError();
+                return of({ items: [], total: 0, page: 0, pageSize: PAGE_SIZE });
+              }),
+            );
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => this.runSearch());
-    this.runSearch();
+      .subscribe((page) => {
+        this.results.set(page.items);
+        this.searching.set(false);
+      });
   }
 
   protected loadError(): string {
     const state = this.state();
     return state.kind === 'error' ? state.message : '';
+  }
+
+  protected onTypeChange(type: string): void {
+    this.cardType.set(type);
+    this.typeChanged.next();
   }
 
   protected slotsLabel(card: CardDto): string {
@@ -485,24 +507,6 @@ export class DeckBuilderPage {
         this.deck.update((current) =>
           current === null ? current : { ...current, isValid: result.valid },
         );
-      });
-  }
-
-  private runSearch(): void {
-    this.searching.set(true);
-    const name = this.searchControl.value.trim();
-    this.cardsApi
-      .search(name.length > 0 ? name : null, this.cardType(), 0, PAGE_SIZE)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        catchError(() => {
-          this.sound.playError();
-          return of({ items: [], total: 0, page: 0, pageSize: PAGE_SIZE });
-        }),
-      )
-      .subscribe((page) => {
-        this.results.set(page.items);
-        this.searching.set(false);
       });
   }
 
