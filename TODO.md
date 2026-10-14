@@ -100,6 +100,9 @@
 
 ## F4 — Frontend
 
+> Skill de capa: `src/DotnetTCG.Frontend/.opencode/skills/angular-22-engineering/SKILL.md`
+> (sin tests: regla del proyecto, ver nota al inicio de la skill).
+
 > Adaptación: el contrato REST está congelado y testeado (395 tests). Los flujos
 > `register→login`, `deck builder→validate`, `lobby→ready→start`, `setup con mulligan`
 > y `attach/attack/pendingChoice` ya están ejecutados end-to-end en `Api.Tests`
