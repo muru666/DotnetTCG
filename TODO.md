@@ -87,19 +87,39 @@
 
 ## F3b — SignalR
 
-- [ ] `GameHub` (lobby en vivo, acciones, `JoinAsSpectator`, chat in-game,
-      `OnDisconnected` + delay 15s → pausa) + `StateProjector`
-      (`Private/Public/Spectator`, no-leak: sin mano rival, orden ni premios ocultos)
-      + authz por recurso (`MemberOfGame`; `DeckOwner` ya aplicado en servicios).
-- [ ] Tests no-leak con 3 clientes (P0/P1/espectador).
+> Adaptación por la base de tests: la **proyección** (`StateProjector`) ya está cubierta
+> determinísticamente (`StateProjectorTests`: viewer0/1/espectador/sin-leak de `PendingChoice`)
+> y el contrato REST de partida completo ya está probado. El hub solo debe probar
+> **transporte + authz + delay** — no re-testear reglas ni proyección.
+
+- [ ] `GameHub`: `JoinLobby/ExecuteAction/JoinAsSpectator/SendChat`, auth de conexión,
+      autorización de grupos por membresía (`MemberOfGame`), broadcast
+      `action-result` → grupo y estado a `Clients.User` (reusa `StateProjector`).
+- [ ] `OnDisconnected` → delay 15s (reloj/delay abstraídos) → `PauseAsync` (ya testeados).
+- [ ] Tests del hub: auth rechazada, miembro vs no-miembro en grupo, orden de broadcast,
+      disconnect → pausa. El no-leak en vivo se verifica una vez con 3 clientes
+      (P0/P1/espectador) — la semántica ya está garantizada por los tests del proyector.
 
 ## F4 — Frontend
 
-- [ ] Auth, deck builder (buscar xy1, 0/60, validación), lobby, tablero (zonas + mano +
-      premios + estadio), panel por fase, log. Sin tests FE.
+> Adaptación: el contrato REST está congelado y testeado (395 tests). Los flujos
+> `register→login`, `deck builder→validate`, `lobby→ready→start`, `setup con mulligan`
+> y `attach/attack/pendingChoice` ya están ejecutados end-to-end en `Api.Tests`
+> → sirven de guion de implementación de UI y de fuente de verdad de payloads.
+
+- [ ] Auth (guard + login/register/recovery), deck builder (buscar xy1, 0/60, validate),
+      lobby (crear/unirse/ready), tablero (zonas + mano + premios + estadio + pendingChoice),
+      panel por fase, log. Sin tests FE (regla acordada).
 
 ## F5 — Hardening
 
-- [ ] Verificar registry vs datos reales xy1 (nombres, flips, bloqueadores con alias).
-- [ ] Seed XY1 146 versionado (sin users fijos, CLI `create-admin`), cobertura global ≥80%.
+- [ ] Seed XY1 146 versionado (sin users fijos, CLI `create-admin`).
+- [ ] Verificar registry vs datos reales xy1: test de integración que importe el set
+      y afirme que los nombres de ataques/habilidades/estadios xy1 mapean a behaviors
+      (los `Aliases`/fallback quedan medidos, no asumidos).
 - [ ] Post-MVP aparcado: refresh rotativo, amigos/DMs, ImgBB, ranking/historial.
+
+## Gate de cierre (todas las fases)
+
+- `dotnet test DotnetTCG.sln` verde.
+- `python3 scripts/coverage.py /tmp/cov` con Postgres de test arriba: global ≥90%.
