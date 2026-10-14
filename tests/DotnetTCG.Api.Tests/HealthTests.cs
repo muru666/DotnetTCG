@@ -3,19 +3,12 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace DotnetTCG.Api.Tests;
 
-public sealed class HealthTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthTests : IClassFixture<TestFactory>
 {
     private readonly HttpClient _client;
 
-    public HealthTests(WebApplicationFactory<Program> factory)
+    public HealthTests(TestFactory factory)
     {
-        Environment.SetEnvironmentVariable(
-            "ConnectionStrings__Default",
-            "Host=localhost;Port=5432;Database=dotnettcp_test;Username=postgres;Password=postgres");
-        Environment.SetEnvironmentVariable(
-            "Jwt__Key",
-            "TEST-ONLY-not-a-real-secret-0123456789abcdef");
-
         _client = factory.CreateClient();
     }
 

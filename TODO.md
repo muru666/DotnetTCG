@@ -76,13 +76,14 @@
 
 ## F3a — API REST
 
-- [ ] Auth (`register/login/profile`, recovery `request/validate/reset`; 401 vía `ProblemDetails`),
-      decks CRUD + `validate`, cards (búsqueda paginada + `GET {id}`),
-      `POST cards/import?set=` solo `ADMIN` (manual, por upsert — ver decisión F2a).
-- [ ] Games REST mínimo (lobby crear/unirse/listar, `GET state` proyectado, `POST action`,
-      mulligan, pausa/reanudación) + FluentValidation en todos los inputs.
-- [ ] Tests `WebApplicationFactory`: contrato, 401/403/404, IDOR (mazo/partida ajena),
-      paginación acotada, `import` solo ADMIN.
+- [x] Auth (`POST /v1/auth/register|login`, `GET /v1/users/me`, recovery
+      `request/validate/reset`; login → 401 vía `ProblemDetails`), decks CRUD + `validate`,
+      cards (búsqueda paginada validada, `GET {id}`), `POST v1/cards/import?set=` solo `ADMIN`.
+- [x] Games REST (`/v1/games`: crear/unirse/deck/ready/start/state/actions/mulligan/
+      pause/resume/logs/leave/settings/remove-player) + FluentValidation en todos los inputs
+      + enums como strings (camelCase) + `StateProjector` compartido (mano rival oculta).
+- [x] Tests `WebApplicationFactory` (7): contrato auth, 401, IDOR mazo, paginación acotada,
+      `import` 403/ADMIN, flujo de partida completa por HTTP con no-leak de mano rival.
 
 ## F3b — SignalR
 
