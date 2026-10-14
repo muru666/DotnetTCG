@@ -139,7 +139,12 @@
       con mute). Paquetes: `@microsoft/signalr` + `@angular/cdk`. Sin `app.spec.ts`
       ni script `test` (regla sin-tests). `ng build` + serve 200 verificados
       (lint no configurado en el scaffold: pendiente evaluar `angular-eslint`).
-- [ ] F4.1 Auth: login/register/recovery con Reactive Forms + validación de UX
+- [x] F4.1 Auth: login/register/recovery con Reactive Forms tipados + validación de UX
+      (validadores espejo del backend, `ApiError` con primer error de campo),
+      estados `idle|loading|error`, auto-login tras registro, recovery en 2 pasos
+      (con `?token=`), sonido de error, rutas lazy. Contrato verificado contra
+      backend real (register 201/login/me OK). Signal Forms evaluados y descartados
+      (API con piezas internas `ɵ`, documentado).
       (el backend manda), estados loading/error explícitos.
 - [ ] F4.2 Mazos: listar/crear/editar/borrar, builder (buscar `/v1/cards`,
       agregar/quitar, contador 0/60, límites visibles, `POST validate`).

@@ -10,6 +10,7 @@ export interface ApiError {
 interface ProblemDetails {
   readonly title?: string;
   readonly detail?: string;
+  readonly errors?: Record<string, string[]>;
 }
 
 /** Traduce ProblemDetails del backend a mensajes útiles sin filtrar internos. */
@@ -18,11 +19,24 @@ export function toApiError(response: HttpErrorResponse): ApiError {
   const code = typeof problem?.title === 'string' && problem.title.length > 0
     ? problem.title
     : 'Error.Unknown';
-  const fallback = fallbackMessage(response.status);
-  const message = typeof problem?.detail === 'string' && problem.detail.length > 0
-    ? problem.detail
-    : fallback;
+  const fieldError = firstFieldError(problem?.errors);
+  const message = fieldError
+    ?? (typeof problem?.detail === 'string' && problem.detail.length > 0 ? problem.detail : null)
+    ?? fallbackMessage(response.status);
   return { status: response.status, code, message };
+}
+
+function firstFieldError(errors: Record<string, string[]> | undefined): string | null {
+  if (errors === undefined) {
+    return null;
+  }
+  for (const messages of Object.values(errors)) {
+    const first = messages.find((m) => m.length > 0);
+    if (first !== undefined) {
+      return first;
+    }
+  }
+  return null;
 }
 
 function fallbackMessage(status: number): string {
