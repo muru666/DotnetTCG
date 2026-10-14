@@ -114,7 +114,8 @@ public sealed class RuleValidator
             return new Error("Retreat.OncePerTurn", "Only one retreat per turn.");
         if (active.HasStatus(Status.Asleep) || active.HasStatus(Status.Paralyzed))
             return new Error("Retreat.StatusBlocked", "Active Pokemon cannot retreat while Asleep or Paralyzed.");
-        if (active.HasModifier(ModifierType.CannotRetreat, state.TurnNumber))
+        if (active.HasModifier(ModifierType.CannotRetreat, state.TurnNumber)
+            || board.ModifiersBlocked(ModifierType.CannotRetreat, state.TurnNumber))
             return new Error("Retreat.Blocked", "Active Pokemon cannot retreat (effect).");
         if (board.Bench.Count == 0)
             return new Error("Retreat.NoBench", "No benched Pokemon to switch in.");

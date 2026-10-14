@@ -57,7 +57,16 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
 
     public async Task UpdateAsync(GameData game, uint expectedVersion, CancellationToken cancellationToken)
     {
-        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        // En prod no hay transacción externa: la abrimos y somos dueños del commit.
+        // En tests con transacción externa participamos en la existente.
+        var ownsTransaction = db.Database.CurrentTransaction is null;
+        await using var tx = ownsTransaction
+            ? await db.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
+        var tracked = db.Games.Local.FirstOrDefault(g => g.Id == game.Id);
+        if (tracked is not null)
+            db.Entry(tracked).State = EntityState.Detached;
 
         var scalars = ToEntity(game);
         scalars.Players = [];
@@ -102,7 +111,8 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        await tx.CommitAsync(cancellationToken);
+        if (ownsTransaction)
+            await tx!.CommitAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)

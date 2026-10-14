@@ -95,7 +95,8 @@ public sealed class GameEngine
         if (state.PendingChoice is not null)
             return ExecutePending(state, action, events);
 
-        if (action.PlayerIndex != state.CurrentPlayerIndex && action.Type != GameActionType.PassTurn)
+        if (action.PlayerIndex != state.CurrentPlayerIndex
+            && action.Type is not (GameActionType.PassTurn or GameActionType.Concede))
             return new GameActionResult(false, "Turn.NotYourTurn", null, events);
 
         var ensure = EnsurePhase(state, action.Type, events);
@@ -106,8 +107,7 @@ public sealed class GameEngine
         {
             GameActionType.PlayCard when action.Card is PokemonCard => _playPokemon.Handle(state, action),
             GameActionType.PlayCard when action.Card is EnergyCard => _attachEnergy.Handle(state, action),
-            GameActionType.PlayCard when action.Card is TrainerCard t && t.TrainerSubtype == SubType.Tool
-                => _trainer.Handle(state, action, events),
+            GameActionType.PlayCard when action.Card is TrainerCard => _trainer.Handle(state, action, events),
             GameActionType.PlayCard => "Play.UnknownCard",
             GameActionType.Evolve => HandleEvolve(state, action),
             GameActionType.AttachEnergy => _attachEnergy.Handle(state, action),
@@ -119,6 +119,7 @@ public sealed class GameEngine
                 => HandleAbility(state, action, events),
             GameActionType.Attack => HandleAttack(state, action, events),
             GameActionType.PassTurn => _turns.PassTurn(state, action.PlayerIndex),
+            GameActionType.Concede => _turns.Concede(state, action.PlayerIndex),
             GameActionType.DrawCard => HandleManualDraw(state, action),
             _ => "Action.Unknown",
         };

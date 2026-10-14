@@ -63,4 +63,10 @@ internal static class TestCards
 
     public static TrainerCard Item(string id, string name)
         => new(id, name, [SubType.Item], [], "xy1", string.Empty, SubType.Item);
+
+    public static PokemonCard Attacker(string id, string name, int hp = 60)
+        => new(id, name, [SubType.Basic], [], "xy1", string.Empty,
+            hp, 1, EvolvesFrom: null, PokemonType.Colorless,
+            [new Attack("Tackle", string.Empty, "30", [PokemonType.Colorless])],
+            [], [], []);
 }

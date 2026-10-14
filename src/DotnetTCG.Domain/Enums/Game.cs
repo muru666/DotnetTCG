@@ -13,6 +13,7 @@ public enum GameActionType
     PlaySupporter,
     PlayStadium,
     ActivateAbility,
+    Concede,
 }
 
 public enum GameStatus

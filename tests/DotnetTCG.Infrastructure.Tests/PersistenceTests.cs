@@ -88,18 +88,41 @@ public sealed class EfRepositoryTests
         await using var _tx = tx;
         var repo = new EfCardRepository(db);
 
-        var card = new PokemonCard("xy1-1", "Venusaur", [SubType.Basic], [], "xy1", "img",
+        var card = new PokemonCard("zset-1", "Zvenusaur", [SubType.Basic], [], "zset", "img",
             180, 2, null, PokemonType.Grass, [], [], [], []);
         await repo.UpsertRangeAsync([card], CancellationToken.None);
         await repo.UpsertRangeAsync([card with { Hp = 190 }], CancellationToken.None);
 
-        var found = await repo.GetByIdAsync("xy1-1", CancellationToken.None);
-        var searched = await repo.SearchAsync("venus", null, 0, 20, CancellationToken.None);
+        var found = await repo.GetByIdAsync("zset-1", CancellationToken.None);
+        var searched = await repo.SearchAsync("zvenu", null, 0, 20, CancellationToken.None);
 
         Assert.IsType<PokemonCard>(found);
         Assert.Equal(190, ((PokemonCard)found!).Hp);
         Assert.Single(searched);
-        Assert.Equal(1, await repo.CountBySetAsync("xy1", CancellationToken.None));
+        Assert.Equal(1, await repo.CountBySetAsync("zset", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Cards_SearchByType_Filters()
+    {
+        if (await TestPostgres.TryOpenAsync() is not (var db, var tx))
+            return;
+        await using var _ = db;
+        await using var _tx = tx;
+        var repo = new EfCardRepository(db);
+        await repo.UpsertRangeAsync([
+            new PokemonCard("zset-f", "Zfire", [], [], "zset", "", 60, 1, null, PokemonType.Fire, [], [], [], []),
+            new EnergyCard("zset-e", "Zwater Energy", [], [], "zset", "", PokemonType.Water, null),
+        ], CancellationToken.None);
+
+        var fire = await repo.SearchAsync("zfire", PokemonType.Fire, 0, 10, CancellationToken.None);
+        var water = await repo.SearchAsync("zwater", PokemonType.Water, 0, 10, CancellationToken.None);
+        var missing = await repo.SearchAsync("zzz", null, 0, 10, CancellationToken.None);
+
+        Assert.Single(fire);
+        Assert.Single(water);
+        Assert.Empty(missing);
+        Assert.True(await repo.CountAsync(null, null, CancellationToken.None) >= 2);
     }
 
     [Fact]

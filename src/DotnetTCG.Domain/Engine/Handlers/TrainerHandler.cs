@@ -12,12 +12,14 @@ public sealed class TrainerHandler(EngineServices services)
         if (action.Card is not TrainerCard trainer)
             return "Trainer.CardRequired";
 
+        var board = state.Players[action.PlayerIndex];
+        if (!board.HasInHand(trainer))
+            return "Trainer.NotInHand";
+
         var error = services.Rules.CanPlayTrainer(
             state, action.PlayerIndex, trainer, action.Target as PokemonInPlay);
         if (error is not null)
             return error.Code;
-
-        var board = state.Players[action.PlayerIndex];
 
         if (trainer.TrainerSubtype == SubType.Tool)
             return AttachTool(state, board, trainer, action.Target as PokemonInPlay);

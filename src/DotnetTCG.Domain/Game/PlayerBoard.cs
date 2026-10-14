@@ -65,6 +65,8 @@ public sealed class PlayerBoard
 
     public bool RemoveFromHand(Card card) => _hand.Remove(card);
 
+    public bool HasInHand(Card card) => _hand.Contains(card);
+
     public void PlaceActive(PokemonInPlay pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
