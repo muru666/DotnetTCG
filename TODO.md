@@ -102,6 +102,19 @@
 
 > Skill de capa: `src/DotnetTCG.Frontend/.opencode/skills/angular-22-engineering/SKILL.md`
 > (sin tests: regla del proyecto, ver nota al inicio de la skill).
+> Referencia (no copiar): FE viejo en
+> `/home/agus/Documentos/Tecnicatura/2026/Programacion 3/TPI/tpi-pokemon-2w1-02/FE/`.
+> Adoptado: `card` presentacional (drag CDK + face-down + preview dblclick),
+> `player-zone` (pilas mazo/premio/descarte con conteo, drop-hints, modo retreat,
+> botones ataque/habilidad/retirada por fase), `setup-phase` (overlay mulligan
+> explicado + espera + click-to-place además de drag + confirm con etiquetas
+> contextuales), `choice-dialog` (pero con `linkedSignal`, no `effect`, y sin
+> cancelar si la elección es obligatoria), layout game-page (toasts por evento,
+> banner espectador, mano rival boca abajo + conteo, divisor con estadio,
+> preview overlay, panel lateral chat/historial, overlays winner/pausa/desconexión).
+> No copiar: transporte STOMP artesanal (va `@microsoft/signalr`), DTOs del Java,
+> `GameService` dios (signals+Subjects duplicados), page de 500+ líneas,
+> friends/history/música/cropper, `track $index`, fuentes decorativas.
 
 > Adaptación: el contrato REST está congelado y testeado (395 tests). Los flujos
 > `register→login`, `deck builder→validate`, `lobby→ready→start`, `setup con mulligan`
