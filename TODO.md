@@ -158,10 +158,15 @@
       tipados). Verificado con cliente Node real por WebSocket (joins, decks válidos,
       ready×2, start, chat). Fix de dominio encontrado: `GameState.Id` ahora es el
       del lobby (antes un Guid nuevo por snapshot, incorrelacionable).
-- [ ] F4.4 Tablero por SignalR: zonas en grid (activo/banca/mano/premios/descarte/
+- [x] F4.4 Tablero por SignalR: zonas en grid (activo/banca/mano/premios/descarte/
       estadio rival y propio), mano propia completa (la rival solo conteo, ya lo
       garantiza el proyector), panel de acciones por fase + `pendingChoice`,
-      mulligan, conceder, pausa, log y chat.
+      mulligan, conceder, pausa, log y chat. Componentes presentacionales
+      (`pokemon-card`, `player-board`, `action-panel`, `ability-buttons`,
+      `setup-overlay`, `choice-dialog` sin cancelar — el engine no lo soporta,
+      `side-panel` log+chat) + `GameSession` por página + `resource()` para
+      datos de carta. Verificado con walkthrough por hub (setup→60 turnos→concede→
+      Finished con ganador, sin errores).
 - [ ] DoD F4: `ng build` + lint verdes, walkthrough manual de cada flujo contra
       backend con catálogo cargado (prerrequisito: `POST /v1/cards/import?set=xy1`
       con usuario ADMIN), sin `any`/casts inseguros, teclado + foco revisados.

@@ -1,9 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { API_URL } from '../../../core/http/api-url.token';
-import { CardDto, PagedResult } from '../models/deck.models';
+import { API_URL } from '../../core/http/api-url.token';
+import { CardDto, PagedResult } from '../models/card.models';
 
+/** Catálogo de cartas. Compartido entre deck-builder y juego. */
 @Injectable({ providedIn: 'root' })
 export class CardsApi {
   private readonly http = inject(HttpClient);
@@ -18,5 +19,9 @@ export class CardsApi {
       params = params.set('type', type);
     }
     return this.http.get<PagedResult<CardDto>>(`${this.baseUrl}/v1/cards`, { params });
+  }
+
+  getById(id: string): Observable<CardDto> {
+    return this.http.get<CardDto>(`${this.baseUrl}/v1/cards/${id}`);
   }
 }

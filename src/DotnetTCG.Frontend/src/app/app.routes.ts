@@ -19,5 +19,10 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/lobby/lobby.routes').then((m) => m.lobbyRoutes),
   },
+  {
+    path: 'games/:id',
+    loadChildren: () =>
+      import('./features/game/game.routes').then((m) => m.gameRoutes),
+  },
   { path: '**', component: NotFoundPage },
 ];

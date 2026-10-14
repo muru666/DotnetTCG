@@ -7,9 +7,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, merge, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { toApiError } from '../../../core/http/api-error';
 import { SoundService } from '../../../core/sound/sound';
-import { CardsApi } from '../data-access/cards.api';
+import { CardsApi } from '../../../shared/data-access/cards.api';
 import { DecksApi } from '../data-access/decks.api';
-import { CardDto, DeckDto, DeckValidation } from '../models/deck.models';
+import { CardDto } from '../../../shared/models/card.models';
+import { DeckDto, DeckValidation } from '../models/deck.models';
 
 const PAGE_SIZE = 20;
 
