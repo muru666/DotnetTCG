@@ -122,4 +122,7 @@
 ## Gate de cierre (todas las fases)
 
 - `dotnet test DotnetTCG.sln` verde.
-- `python3 scripts/coverage.py /tmp/cov` con Postgres de test arriba: global ≥90%.
+- `python3 scripts/coverage.py /tmp/cov` con Postgres de test arriba
+  (`docker start dotnettcp-test-pg`, puerto 5433): global ≥90%.
+  Sin Docker los tests con DB se omiten en silencio (queda verde pero cae la
+  cobertura) — si el global baja sin cambios de código, revisar el container primero.

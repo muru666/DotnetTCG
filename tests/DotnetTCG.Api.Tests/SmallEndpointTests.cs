@@ -23,6 +23,7 @@ public sealed class SmallEndpointTests
         }
         catch
         {
+            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
             return false;
         }
     }
@@ -120,6 +121,26 @@ public sealed class SmallEndpointTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("Teleport", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Login_RateLimited_Returns429()
+    {
+        if (!await DbAsync())
+            return;
+        using var factory = Factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("RateLimiting:AuthPermitLimit", "3"));
+        var client = factory.CreateClient();
+
+        HttpStatusCode? last = null;
+        for (var i = 0; i < 4; i++)
+        {
+            var response = await client.PostAsJsonAsync("/v1/auth/login",
+                new { username = "nobody", password = "wrongpass1" });
+            last = response.StatusCode;
+        }
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, last);
     }
 
     private sealed record IdDto(Guid Id);

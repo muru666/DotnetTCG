@@ -28,6 +28,7 @@ public sealed class MoreEndpointTests
         }
         catch
         {
+            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
             return false;
         }
     }

@@ -39,7 +39,7 @@ public sealed class AttackPipelineTests
     private static AttackPipeline Pipeline(ICoinFlipService? coin = null)
         => new(new DamageCalculator(), new EffectEngine(
             new StatusEffectManager(), coin ?? new SeededCoinFlip(), new Random(5)),
-            new StatusEffectManager(), coin ?? new SeededCoinFlip());
+            new StatusEffectManager(), coin ?? new SeededCoinFlip(), new Random(5));
 
     private static readonly AttackRegistry Registry = new();
 

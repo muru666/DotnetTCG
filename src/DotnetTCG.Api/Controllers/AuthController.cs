@@ -4,6 +4,7 @@ using DotnetTCG.Application.Users;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace DotnetTCG.Api.Controllers;
@@ -21,6 +22,7 @@ public sealed class AuthController(
 {
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<UserDto>> Register([FromBody] RegisterRequest request, CancellationToken ct)
     {
         var validation = await registerValidator.ValidateAsync(request, ct);
@@ -34,6 +36,7 @@ public sealed class AuthController(
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthTokenDto>> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         var validation = await loginValidator.ValidateAsync(request, ct);
@@ -56,6 +59,7 @@ public sealed class AuthController(
 
     [HttpPost("/v1/password-recovery/request")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult> RequestRecovery([FromBody] RecoveryRequest request, CancellationToken ct)
     {
         var validation = await recoveryValidator.ValidateAsync(request, ct);
@@ -69,6 +73,7 @@ public sealed class AuthController(
 
     [HttpPost("/v1/password-recovery/validate")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult> ValidateRecovery(
         [FromBody] RecoveryValidateRequest request, CancellationToken ct)
     {
@@ -80,6 +85,7 @@ public sealed class AuthController(
 
     [HttpPost("/v1/password-recovery/reset")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult> ResetRecovery([FromBody] RecoveryResetRequest request, CancellationToken ct)
     {
         var validation = await resetValidator.ValidateAsync(request, ct);

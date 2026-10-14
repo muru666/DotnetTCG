@@ -28,6 +28,7 @@ internal static class TestPostgres
         catch
         {
             await db.DisposeAsync();
+            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
             return null;
         }
 

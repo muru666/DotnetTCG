@@ -39,7 +39,7 @@ public sealed class AttackRegistryTests
     private static AttackPipeline NewPipeline(ICoinFlipService? flip = null)
         => new(new DamageCalculator(),
             new EffectEngine(new StatusEffectManager(), flip ?? new SeededCoinFlip(), new Random(1)),
-            new StatusEffectManager(), flip ?? new SeededCoinFlip());
+            new StatusEffectManager(), flip ?? new SeededCoinFlip(), new Random(1));
 
     public static TheoryData<string> AllAttacks()
     {

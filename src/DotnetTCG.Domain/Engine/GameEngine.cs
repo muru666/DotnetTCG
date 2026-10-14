@@ -51,7 +51,7 @@ public sealed class GameEngine
             new AttackRegistry(),
             new AbilityRegistry(),
             effects,
-            new AttackPipeline(new DamageCalculator(), effects, statuses, coinFlip),
+            new AttackPipeline(new DamageCalculator(), effects, statuses, coinFlip, random),
             coinFlip,
             random);
     }

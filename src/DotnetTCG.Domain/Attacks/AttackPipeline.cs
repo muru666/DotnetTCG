@@ -30,7 +30,8 @@ public sealed class AttackPipeline(
     DamageCalculator damageCalculator,
     EffectEngine effects,
     StatusEffectManager statuses,
-    ICoinFlipService coinFlip)
+    ICoinFlipService coinFlip,
+    Random random)
 {
     public const string PendingBenchTarget = "bench-target";
     public const string PendingOptionalDiscard = "optional-discard";
@@ -47,7 +48,7 @@ public sealed class AttackPipeline(
             context.Defender,
             context.BaseDamage,
             coinFlip,
-            new Random(),
+            random,
             context.OptionalDiscardAccepted == true,
             context.EnergiesToDiscard)) ?? context.BaseDamage;
 
@@ -119,7 +120,7 @@ public sealed class AttackPipeline(
             effects,
             statuses,
             coinFlip,
-            new Random()));
+            random));
 
         return new AttackResult(true, null, damage, null);
     }

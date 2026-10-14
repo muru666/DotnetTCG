@@ -36,6 +36,7 @@ public sealed class ContractTests
         }
         catch
         {
+            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
             return false;
         }
     }

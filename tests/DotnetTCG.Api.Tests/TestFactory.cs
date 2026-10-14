@@ -13,5 +13,8 @@ public sealed class TestFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable(
             "Jwt__Key",
             "TEST-ONLY-not-a-real-secret-0123456789abcdef");
+        Environment.SetEnvironmentVariable(
+            "RateLimiting__AuthPermitLimit",
+            "10000");
     }
 }
