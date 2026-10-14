@@ -146,8 +146,12 @@
       backend real (register 201/login/me OK). Signal Forms evaluados y descartados
       (API con piezas internas `ɵ`, documentado).
       (el backend manda), estados loading/error explícitos.
-- [ ] F4.2 Mazos: listar/crear/editar/borrar, builder (buscar `/v1/cards`,
-      agregar/quitar, contador 0/60, límites visibles, `POST validate`).
+- [x] F4.2 Mazos: listar/crear/editar/borrar, builder (buscar `/v1/cards`
+      con debounce + filtro de tipo, agregar/quitar, contador 0/60 con barra,
+      slots restantes por carta, `POST validate` con errores visibles, renombrar,
+      preview overlay). Verificado contra backend real con xy1 importado (146):
+      search/add/5ta copia/validate responden lo esperado (el servidor permite >4
+      en construcción y lo marca en validate; el FE previene para UX).
 - [ ] F4.3 Lobby por SignalR (`/hubs/game` + `?access_token=`): crear/unirse
       (password), seleccionar mazo, ready, start → navegar a `/games/:id`.
 - [ ] F4.4 Tablero por SignalR: zonas en grid (activo/banca/mano/premios/descarte/

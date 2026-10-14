@@ -9,5 +9,10 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/auth/auth.routes').then((m) => m.authRoutes),
   },
+  {
+    path: 'decks',
+    loadChildren: () =>
+      import('./features/decks/decks.routes').then((m) => m.decksRoutes),
+  },
   { path: '**', component: NotFoundPage },
 ];
