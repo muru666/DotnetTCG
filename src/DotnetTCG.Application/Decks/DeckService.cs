@@ -3,6 +3,7 @@ using DotnetTCG.Domain.Cards;
 using DotnetTCG.Domain.Common;
 using DotnetTCG.Domain.Enums;
 using DotnetTCG.Domain.Game;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetTCG.Application.Decks;
 
@@ -20,8 +21,79 @@ public sealed record DeckValidationResult(bool Valid, IReadOnlyList<string> Erro
 public sealed class DeckService(
     IDeckRepository decks,
     ICardRepository cards,
-    RuleValidator rules)
+    RuleValidator rules,
+    ILogger<DeckService>? logger = null)
 {
+    public const string StarterDeckName = "Mazo inicial";
+
+    /// <summary>
+    /// Crea el mazo inicial balanceado (20 Pokémon / 20 Entrenadores / 20 Energías).
+    /// Nunca lanza: si el catálogo no alcanza, no hay mazo pero el registro sigue válido.
+    /// </summary>
+    public async Task<DeckEntry?> EnsureStarterDeckAsync(Guid ownerId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if ((await decks.ListByOwnerAsync(ownerId, cancellationToken)).Count > 0)
+                return null;
+
+            var catalog = await cards.SearchAsync(null, null, 0, 500, cancellationToken);
+            var pokemon = catalog
+                .OfType<PokemonCard>()
+                .Where(c => c.IsBasic)
+                .GroupBy(c => c.Name)
+                .Take(5)
+                .Select(g => g.First().Id)
+                .ToList();
+            var trainers = catalog
+                .OfType<TrainerCard>()
+                .Where(c => c.TrainerSubtype != SubType.AceSpec)
+                .GroupBy(c => c.Name)
+                .Take(5)
+                .Select(g => g.First().Id)
+                .ToList();
+            var energy = catalog
+                .OfType<EnergyCard>()
+                .FirstOrDefault(c => c.IsBasic)?.Id;
+            if (pokemon.Count < 5 || trainers.Count < 5 || energy is null)
+            {
+                logger?.LogWarning("Catálogo insuficiente para mazo inicial.");
+                return null;
+            }
+
+            var merged = new Dictionary<string, int>();
+            foreach (var id in pokemon.Concat(trainers))
+                merged[id] = 4;
+            merged[energy] = 20;
+
+            var domainCards = new List<Card>();
+            foreach (var (cardId, quantity) in merged)
+            {
+                var card = await cards.GetByIdAsync(cardId, cancellationToken);
+                if (card is null)
+                    return null;
+                for (var i = 0; i < quantity; i++)
+                    domainCards.Add(card);
+            }
+
+            if (rules.ValidateDeck(domainCards).Count > 0)
+            {
+                logger?.LogWarning("Mazo inicial generado inválido; no se guarda.");
+                return null;
+            }
+
+            var entry = new DeckEntry(Guid.NewGuid(), ownerId, StarterDeckName,
+                IsValid: true, Version: 1, merged);
+            await decks.AddAsync(entry, cancellationToken);
+            return entry;
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "No se pudo crear el mazo inicial.");
+            return null;
+        }
+    }
+
     public async Task<Result<DeckDto>> CreateAsync(
         Guid ownerId, string name, CancellationToken cancellationToken)
     {

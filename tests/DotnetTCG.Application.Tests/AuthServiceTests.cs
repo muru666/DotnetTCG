@@ -1,6 +1,8 @@
 using DotnetTCG.Application.Auth;
 using DotnetTCG.Application.Common.Interfaces;
+using DotnetTCG.Application.Decks;
 using DotnetTCG.Application.Users;
+using DotnetTCG.Domain.Game;
 
 namespace DotnetTCG.Application.Tests;
 
@@ -12,7 +14,7 @@ public sealed class UserServiceTests
     {
         var users = new FakeUserRepository();
         var tokens = new FakeTokens();
-        return (new UserService(users, new FakeHasher(), tokens, new TestClock(Now)), users, tokens);
+        return (new UserService(users, new FakeHasher(), tokens, new TestClock(Now), TestDecks.New()), users, tokens);
     }
 
     [Fact]
@@ -75,13 +77,51 @@ public sealed class RecoveryServiceTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 8, 0, 0, 0, TimeSpan.Zero);
 
+    [Fact]
+    public async Task Register_CreatesBalancedStarterDeck()
+    {
+        var users = new FakeUserRepository();
+        var decks = new FakeDeckRepository();
+        var catalog = TestCardFactory.Catalog();
+        catalog["xy1-s4"] = TestCardFactory.Supporter("xy1-s4", "Supporter4");
+        var deckService = new DeckService(
+            decks, new FakeCardRepository(catalog), new RuleValidator());
+        var service = new UserService(
+            users, new FakeHasher(), new FakeTokens(), new TestClock(Now), deckService);
+
+        var registered = await service.RegisterAsync("ash", "ash@x.test", "password1", CancellationToken.None);
+
+        Assert.True(registered.IsSuccess);
+        var owned = await decks.ListByOwnerAsync(registered.Value!.Id, CancellationToken.None);
+        var starter = Assert.Single(owned);
+        Assert.Equal(DeckService.StarterDeckName, starter.Name);
+        Assert.True(starter.IsValid);
+        Assert.Equal(60, starter.Cards.Values.Sum());
+    }
+
+    [Fact]
+    public async Task Register_WithoutCatalog_StillSucceedsWithoutDeck()
+    {
+        var users = new FakeUserRepository();
+        var decks = new FakeDeckRepository();
+        var deckService = new DeckService(
+            decks, new FakeCardRepository(), new RuleValidator());
+        var service = new UserService(
+            users, new FakeHasher(), new FakeTokens(), new TestClock(Now), deckService);
+
+        var registered = await service.RegisterAsync("ash", "ash@x.test", "password1", CancellationToken.None);
+
+        Assert.True(registered.IsSuccess);
+        Assert.Empty(await decks.ListByOwnerAsync(registered.Value!.Id, CancellationToken.None));
+    }
+
     private static async Task<UserRecordSetup> SetupUserAsync()
     {
         var users = new FakeUserRepository();
         var tokens = new FakeRecoveryTokens();
         var sender = new FakeSender();
         var clock = new TestClock(Now);
-        var userService = new UserService(users, new FakeHasher(), new FakeTokens(), clock);
+        var userService = new UserService(users, new FakeHasher(), new FakeTokens(), clock, TestDecks.New());
         var registered = await userService.RegisterAsync("ash", "ash@x.test", "password1", CancellationToken.None);
         var service = new RecoveryService(users, tokens, new FakeHasher(), sender, clock);
         return new UserRecordSetup(users, service, tokens, sender, clock, registered.Value!.Id);

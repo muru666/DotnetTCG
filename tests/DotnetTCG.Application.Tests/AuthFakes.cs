@@ -92,6 +92,15 @@ internal sealed class FakeSender : IEmailSender
     }
 }
 
+internal static class TestDecks
+{
+    public static DotnetTCG.Application.Decks.DeckService New(
+        FakeDeckRepository? deckRepo = null, FakeCardRepository? cardRepo = null) =>
+        new(deckRepo ?? new FakeDeckRepository(),
+            cardRepo ?? new FakeCardRepository(TestCardFactory.Catalog()),
+            new DotnetTCG.Domain.Game.RuleValidator());
+}
+
 internal sealed class TestClock(DateTimeOffset now) : IClock
 {
     public DateTimeOffset Current { get; set; } = now;

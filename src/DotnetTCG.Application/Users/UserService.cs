@@ -1,4 +1,5 @@
 using DotnetTCG.Application.Common.Interfaces;
+using DotnetTCG.Application.Decks;
 using DotnetTCG.Domain.Common;
 
 namespace DotnetTCG.Application.Users;
@@ -7,7 +8,8 @@ public sealed class UserService(
     IUserRepository users,
     IPasswordHasher hasher,
     ITokenService tokens,
-    IClock clock)
+    IClock clock,
+    DeckService decks)
 {
     public async Task<Result<UserDto>> RegisterAsync(
         string username, string email, string password, CancellationToken cancellationToken)
@@ -28,6 +30,7 @@ public sealed class UserService(
 
         var record = new UserRecord(Guid.NewGuid(), username, email, hasher.Hash(password), "User");
         await users.AddAsync(record, cancellationToken);
+        await decks.EnsureStarterDeckAsync(record.Id, cancellationToken);
         return Result<UserDto>.Success(new UserDto(record.Id, record.Username, record.Email, record.Role));
     }
 
