@@ -132,11 +132,13 @@
 > Layout en grid que colapsa a una columna en móvil, mano siempre visible.
 > Stack: CSS vanilla con custom properties (sin frameworks CSS).
 
-- [ ] F4.0 Base: tokens en `styles.css`, `provideHttpClient()` + interceptor JWT
-      (token en `localStorage`: pragmático para proyecto personal sin refresh;
-      documentado como tradeoff) + mapeo central de errores, `core/auth` (sesión),
-      rutas (`/login /register /recovery /decks /decks/:id /lobby /games/:id` + 404)
-      con guards solo-UX, shell/layout. Paquete nuevo: `@microsoft/signalr`.
+- [x] F4.0 Base: tokens en `styles.css`, `provideHttpClient()` + interceptor JWT
+      (token en `sessionStorage`: muere con la pestaña; el servidor autoriza igual)
+      + `ApiError` central, `core/auth` (sesión + guards solo-UX), shell + 404,
+      rutas base (features agregan las suyas en F4.1–F4.4), `core/sound` (sfx viejo,
+      con mute). Paquetes: `@microsoft/signalr` + `@angular/cdk`. Sin `app.spec.ts`
+      ni script `test` (regla sin-tests). `ng build` + serve 200 verificados
+      (lint no configurado en el scaffold: pendiente evaluar `angular-eslint`).
 - [ ] F4.1 Auth: login/register/recovery con Reactive Forms + validación de UX
       (el backend manda), estados loading/error explícitos.
 - [ ] F4.2 Mazos: listar/crear/editar/borrar, builder (buscar `/v1/cards`,

@@ -1,12 +1,17 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { AppShell } from './core/layout/app-shell';
 
 @Component({
-  imports: [RouterOutlet],
+  imports: [AppShell],
   selector: 'app-root',
-  styleUrl: './app.css',
-  templateUrl: './app.html',
+  template: `<app-shell />`,
+  styles: [
+    `
+      :host {
+        display: block;
+        min-height: 100dvh;
+      }
+    `,
+  ],
 })
-export class App {
-  protected readonly title = signal('DotnetTCG.Frotnend');
-}
+export class App {}
