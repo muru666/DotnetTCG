@@ -35,7 +35,8 @@ public sealed record GameStateViewDto(
     string? StadiumCardId,
     PendingChoice? PendingChoice,
     int? WinnerPlayerIndex,
-    bool SuddenDeath);
+    bool SuddenDeath,
+    int StartingPlayerIndex);
 
 public static class StateProjector
 {
@@ -55,7 +56,8 @@ public static class StateProjector
                 ? null
                 : state.PendingChoice,
             state.WinnerPlayerIndex,
-            state.SuddenDeath);
+            state.SuddenDeath,
+            state.StartingPlayerIndex);
     }
 
     private static BoardViewDto ProjectBoard(PlayerBoard board, bool isOwner)

@@ -1,0 +1,83 @@
+@if (loadingError()) {
+  <div class="spectator-error">
+    <p>No se pudo cargar la partida.</p>
+    <button class="back-btn" (click)="goBack()">Volver al Lobby</button>
+  </div>
+} @else if (gameService.gameState(); as state) {
+  <div class="spectator-page">
+    <button class="exit-btn" (click)="goBack()" title="Salir">← Salir</button>
+
+    <div class="spectator-banner">
+      <span>Modo espectador</span>
+      @if (isGameOver()) {
+        <span class="spectator-result">
+          · Partida finalizada
+          @if (winnerName(); as w) {
+            · Ganador: {{ w }}
+          }
+        </span>
+      }
+    </div>
+
+    <div class="spec-layout">
+      <div class="spec-chat-col">
+        <div class="spec-chat-header">Chat de jugadores</div>
+        <div class="spec-chat-body">
+          <app-chat-panel
+            [messages]="playerChatMessages()"
+            [currentUserId]="authService.getUserId() ?? ''"
+            [readOnly]="true"
+          />
+        </div>
+      </div>
+
+      <div class="spec-board">
+        <div class="spec-board-half">
+          <app-spectator-player-zone
+            [board]="state.myBoard"
+            [playerName]="player1Name()"
+            [isActiveTurn]="state.currentPlayerIndex === 0"
+            (preview)="onPreviewCard($event)"
+          />
+        </div>
+        <div class="spec-divider"></div>
+        <div class="spec-board-half">
+          <app-spectator-player-zone
+            [board]="state.opponentBoard"
+            [playerName]="player2Name()"
+            [isActiveTurn]="state.currentPlayerIndex === 1"
+            (preview)="onPreviewCard($event)"
+          />
+        </div>
+      </div>
+
+      <div class="spec-chat-col">
+        <div class="spec-chat-header">Chat de espectadores</div>
+        <div class="spec-chat-body">
+          <app-chat-panel
+            [messages]="gameService.chatMessages()"
+            [currentUserId]="authService.getUserId() ?? ''"
+            (sendMessage)="onSendSpectatorMessage($event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    @if (state.status !== 'SETUP') {
+      <div class="turn-indicator">
+        Turno {{ state.turnNumber }}
+      </div>
+    }
+
+    @if (previewImageUrl(); as url) {
+      <div class="preview-overlay" (click)="closePreview()">
+        <img [ngSrc]="url" alt="Vista previa" class="preview-image" width="350" height="490">
+      </div>
+    }
+  </div>
+} @else {
+  <div class="spectator-loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando partida...</p>
+  </div>
+}

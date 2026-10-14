@@ -1,0 +1,668 @@
+.game-page {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 40px,
+      rgba(0, 0, 0, 0.03) 40px,
+      rgba(0, 0, 0, 0.03) 41px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 40px,
+      rgba(0, 0, 0, 0.03) 40px,
+      rgba(0, 0, 0, 0.03) 41px
+    ),
+    linear-gradient(
+      180deg,
+      #3d2314 0%,
+      #5c3a24 15%,
+      #6b4228 30%,
+      #5c3a24 50%,
+      #4a2c1a 70%,
+      #3d2314 100%
+    );
+  display: flex;
+  flex-direction: column;
+  font-family: 'Nunito', sans-serif;
+}
+
+.float-buttons {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.float-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+.float-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.float-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+}
+.float-btn.surrender-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.chat-btn {
+  position: relative;
+}
+
+.chat-btn .badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.confirm-dialog {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.confirm-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  margin: 0 0 20px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.confirm-cancel {
+  padding: 8px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.confirm-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.confirm-yes {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #ef4444;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+.confirm-yes:hover {
+  background: #dc2626;
+}
+
+.avatar {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.avatar-opponent { top: 8px; left: 12px; }
+.avatar-player { bottom: 8px; right: 12px; }
+.avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #2a2a3e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+.avatar-name {
+  font-family: 'Bungee', sans-serif;
+  font-size: 12px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 40px 16px 0;
+  position: relative;
+}
+
+.game-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.3),
+    inset 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
+.field-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  position: relative;
+  min-height: 0;
+}
+
+.red-half {
+  background: linear-gradient(135deg, #8b0000 0%, #cc0000 40%, #aa0000 100%);
+}
+
+.blue-half {
+  background: linear-gradient(135deg, #0033aa 0%, #0044cc 40%, #003399 100%);
+}
+
+.field-divider {
+  position: relative;
+  height: 12px;
+  min-height: 12px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.pokeball {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #cc0000 48%, #ddd 48%, #ddd 52%, #eee 52%);
+  border: 3px solid #222;
+  box-shadow:
+    0 0 20px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.15);
+  z-index: 1;
+  flex-shrink: 0;
+}
+.pokeball::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eee;
+  border: 3px solid #222;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.pokeball::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 1px solid #555;
+}
+
+.stadium-zone {
+  position: absolute;
+  left: 35%;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 3;
+  pointer-events: none;
+}
+.stadium-card-img {
+  width: 90px;
+  height: 126px;
+  border-radius: 6px;
+  border: 2px solid rgba(245, 158, 11, 0.6);
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.stadium-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 120px;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stadium-empty {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 600;
+  user-select: none;
+}
+
+.hand-row {
+  flex-shrink: 0;
+  min-height: 180px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+}
+
+.opponent-hand-row {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+}
+.opponent-hand-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+}
+.opponent-hand-cards {
+  display: flex;
+  gap: 2px;
+}
+.opponent-hand-card {
+  width: 20px;
+  height: 28px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, #1a237e, #283593);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.side-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+}
+
+.side-panel-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  max-width: 90vw;
+  z-index: 300;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.3);
+}
+.side-panel-container.open {
+  transform: translateX(0);
+}
+
+.game-loading, .game-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #020617;
+  color: var(--text-primary);
+}
+.game-error { text-align: center; }
+.game-error p { margin: 0; }
+.game-error-detail { color: var(--text-muted); font-size: 0.85rem; }
+.back-btn {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(130deg, var(--action), var(--action-strong));
+  color: #0b1120;
+  font-family: 'Nunito', sans-serif;
+}
+
+.loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--surface-border);
+  border-top-color: var(--action);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.game-toast-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 400;
+  background: rgba(127, 29, 29, 0.95);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #fecaca;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  max-width: 80%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  animation: toastIn 0.3s ease-out;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  z-index: 500;
+  color: var(--text-primary);
+}
+.loading-overlay p { margin: 0; font-size: 0.9rem; }
+
+.preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 700;
+  cursor: pointer;
+  animation: previewFadeIn 0.2s ease-out;
+}
+.preview-image {
+  width: auto;
+  height: auto;
+  max-width: min(80vw, 350px);
+  max-height: 95vh;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
+}
+@keyframes previewFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.winner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+  backdrop-filter: blur(4px);
+}
+.winner-card {
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.1);
+}
+.winner-title {
+  font-family: 'Bungee', sans-serif;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+.winner-name {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.25rem;
+}
+.winner-info {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0.5rem 0 1.25rem;
+}
+.winner-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.winner-btn {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(130deg, var(--action), var(--action-strong));
+  color: #0b1120;
+  font-family: 'Nunito', sans-serif;
+  transition: transform 140ms, box-shadow 140ms;
+}
+.winner-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.reconnect-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid var(--action);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--action);
+  transition: transform 140ms, background 140ms;
+  animation: reconnect-pulse 2s infinite;
+}
+.reconnect-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(245, 158, 11, 0.3);
+}
+.reconnect-icon {
+  font-size: 1.3rem;
+}
+.reconnect-label {
+  font-size: 0.85rem;
+}
+@keyframes reconnect-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 320px;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(30, 30, 50, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: toastSlideIn 0.3s ease-out;
+  backdrop-filter: blur(6px);
+}
+
+.toast-ko {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.92);
+}
+
+.toast-victory {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(20, 83, 45, 0.92);
+}
+
+.toast-info {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(30, 64, 175, 0.92);
+}
+
+.toast-attack {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(120, 53, 15, 0.92);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: #fff;
+}
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.pause-card {
+  border-color: rgba(96, 165, 250, 0.3) !important;
+  box-shadow: 0 0 40px rgba(96, 165, 250, 0.1) !important;
+}
+.pause-card p {
+  color: #fff;
+}
+.pause-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1.25rem;
+}
+.pause-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(96, 165, 250, 0.3);
+  border-top-color: rgba(96, 165, 250, 0.9);
+  border-radius: 50%;
+  animation: pause-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes pause-spin {
+  to { transform: rotate(360deg); }
+}
+.pause-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  color: rgb(241, 0, 0);
+}

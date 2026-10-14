@@ -129,6 +129,16 @@ public sealed class GamesController(
             : this.ToActionResult(result);
     }
 
+    [HttpGet("my-resumable")]
+    public async Task<ActionResult<IReadOnlyList<GameSummaryDto>>> MyResumable(CancellationToken ct)
+    {
+        var userId = CurrentUser.Id(User);
+        if (userId is null)
+            return Unauthorized();
+        var games = await execution.ListResumableAsync(userId.Value, ct);
+        return Ok(games.Select(ToSummary).ToList());
+    }
+
     [HttpGet("{id:guid}/state")]
     public async Task<ActionResult<GameStateViewDto>> GetState(Guid id, CancellationToken ct)
     {
@@ -212,5 +222,5 @@ public sealed class GamesController(
 
     private static GameSummaryDto ToSummary(GameData game) => new(
         game.Id, game.Status, game.TurnNumber, game.Phase, game.CurrentPlayerIndex, game.WinnerId,
-        game.Players.Select(p => new LobbyPlayerDto(p.UserId, p.Order, p.DeckId, p.IsReady)).ToList());
+        game.Players.Select(p => new LobbyPlayerDto(p.UserId, p.Order, p.DeckId, p.IsReady, p.Username)).ToList());
 }

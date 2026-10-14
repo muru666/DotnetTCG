@@ -262,6 +262,10 @@ public sealed class GameExecutionService(
         return Result<GameData>.Success(updated);
     }
 
+    public async Task<IReadOnlyList<GameData>> ListResumableAsync(
+        Guid userId, CancellationToken cancellationToken)
+        => await games.ListResumableByUserAsync(userId, cancellationToken);
+
     public async Task<Result<GameState>> LoadGameStateAsync(
         Guid gameId, Guid userId, CancellationToken cancellationToken)
     {

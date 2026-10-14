@@ -1,0 +1,51 @@
+<main class="auth-page" [style.background-image]="backgroundImage()">
+  <section class="auth-card">
+    <img class="auth-logo" src="/pokemonTcg_logo.png" alt="Pokemon TCG" />
+    <h1 class="auth-title">Crear Usuario</h1>
+
+    @if (requestError()) {
+      <div class="auth-message error">{{ requestError() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="auth-field">
+        <label for="username">Nombre de Usuario</label>
+        <input id="username" type="text" formControlName="username" />
+        @if (showControlError('username')) {
+          <p class="auth-error">{{ usernameErrorMessage() }}</p>
+        }
+      </div>
+
+      <div class="auth-field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" />
+        @if (showControlError('email')) {
+          <p class="auth-error">{{ emailErrorMessage() }}</p>
+        }
+      </div>
+
+      <div class="auth-field">
+        <label for="password">Contraseña</label>
+        <input id="password" type="password" formControlName="password" />
+        @if (showControlError('password')) {
+          <p class="auth-error">{{ passwordErrorMessage() }}</p>
+        }
+      </div>
+
+      <div class="auth-field">
+        <label for="confirmPassword">Confirmar Contraseña</label>
+        <input id="confirmPassword" type="password" formControlName="confirmPassword" />
+        @if (showControlError('confirmPassword') || form.hasError('passwordMismatch')) {
+          <p class="auth-error">{{ confirmPasswordErrorMessage() }}</p>
+        }
+      </div>
+
+      <div class="auth-actions">
+        <button class="auth-btn" type="submit" [disabled]="isSubmitting()">Crear</button>
+      </div>
+    </form>
+
+    <a class="auth-link auth-centered-link" routerLink="/iniciar-sesion">Iniciar Sesion</a>
+    <a class="auth-link auth-centered-link" routerLink="/inicio">Volver a Inicio</a>
+  </section>
+</main>

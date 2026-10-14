@@ -1,17 +1,17 @@
-import { Component } from '@angular/core';
-import { AppShell } from './core/layout/app-shell';
+import { Component, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { SoundService } from './core/services/sound.service';
 
 @Component({
-  imports: [AppShell],
   selector: 'app-root',
-  template: `<app-shell />`,
-  styles: [
-    `
-      :host {
-        display: block;
-        min-height: 100dvh;
-      }
-    `,
-  ],
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
 })
-export class App {}
+export class App {
+  private readonly soundService = inject(SoundService);
+
+  constructor() {
+    this.soundService.attachGlobalListeners();
+  }
+}

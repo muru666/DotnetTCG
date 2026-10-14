@@ -12,7 +12,7 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
     public async Task<GameData?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var entity = await db.Games.AsNoTracking()
-            .Include(g => g.Players)
+            .Include(g => g.Players).ThenInclude(p => p.User)
             .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
         return entity is null ? null : ToData(entity);
     }
@@ -20,7 +20,7 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
     public async Task<IReadOnlyList<GameData>> ListLobbyAsync(CancellationToken cancellationToken)
     {
         var entities = await db.Games.AsNoTracking()
-            .Include(g => g.Players)
+            .Include(g => g.Players).ThenInclude(p => p.User)
             .Where(g => g.Status == (int)GameStatus.InLobby)
             .OrderByDescending(g => g.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -31,7 +31,7 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
     {
         var resumable = new[] { (int)GameStatus.Setup, (int)GameStatus.InProgress, (int)GameStatus.Paused };
         var entities = await db.Games.AsNoTracking()
-            .Include(g => g.Players)
+            .Include(g => g.Players).ThenInclude(p => p.User)
             .Where(g => resumable.Contains(g.Status) && g.Players.Any(p => p.UserId == userId))
             .OrderByDescending(g => g.UpdatedAt)
             .ToListAsync(cancellationToken);
@@ -42,7 +42,7 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
     {
         var active = new[] { (int)GameStatus.InLobby, (int)GameStatus.Setup, (int)GameStatus.InProgress, (int)GameStatus.Paused };
         var entity = await db.Games.AsNoTracking()
-            .Include(g => g.Players)
+            .Include(g => g.Players).ThenInclude(p => p.User)
             .Where(g => active.Contains(g.Status) && g.Players.Any(p => p.UserId == userId))
             .OrderByDescending(g => g.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken);
@@ -136,7 +136,7 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
         entity.StateSnapshot,
         entity.Version,
         entity.Players.OrderBy(p => p.PlayerOrder)
-            .Select(p => new GamePlayerData(p.UserId, p.PlayerOrder, p.DeckId, p.IsReady)).ToList(),
+            .Select(p => new GamePlayerData(p.UserId, p.PlayerOrder, p.DeckId, p.IsReady, p.User?.Username ?? "?")).ToList(),
         entity.UpdatedAt,
         entity.PreviousStatus,
         entity.PausedByUserId,

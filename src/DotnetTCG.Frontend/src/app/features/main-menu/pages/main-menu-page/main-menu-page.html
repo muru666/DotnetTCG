@@ -1,0 +1,31 @@
+<main class="auth-page" [style.background-image]="backgroundImage()">
+  <section class="menu-card">
+    <img class="auth-logo" src="/pokemonTcg_logo.png" alt="Pokemon TCG" />
+    <h1 class="auth-title">Menu Principal</h1>
+    <p class="auth-subtitle">Bienvenido, {{ username }}</p>
+
+    <nav class="menu-options">
+      <a class="menu-option" routerLink="/lobby">
+        <span class="menu-option-icon">&#9654;</span>
+        <span class="menu-option-label">Jugar</span>
+        <span class="menu-option-desc">Crea o unete a una partida</span>
+      </a>
+
+      <a class="menu-option" routerLink="/deck-builder">
+        <span class="menu-option-icon">&#9776;</span>
+        <span class="menu-option-label">Mazos</span>
+        <span class="menu-option-desc">Administra tus mazos</span>
+      </a>
+
+      <a class="menu-option" routerLink="/pokedex">
+        <span class="menu-option-icon">&#128214;</span>
+        <span class="menu-option-label">Pokédex</span>
+        <span class="menu-option-desc">Catálogo de cartas</span>
+      </a>
+
+    </nav>
+
+    <button class="logout-btn" type="button" (click)="onLogout()" title="Cerrar Sesion">&#8592; Cerrar Sesion</button>
+  </section>
+
+</main>

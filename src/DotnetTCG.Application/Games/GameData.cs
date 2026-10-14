@@ -2,7 +2,7 @@ using DotnetTCG.Domain.Enums;
 
 namespace DotnetTCG.Application.Games;
 
-public sealed record GamePlayerData(Guid UserId, int Order, Guid? DeckId, bool IsReady);
+public sealed record GamePlayerData(Guid UserId, int Order, Guid? DeckId, bool IsReady, string Username = "");
 
 public sealed record GameData(
     Guid Id,

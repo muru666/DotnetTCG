@@ -1,0 +1,178 @@
+<main class="auth-page" [style.background-image]="backgroundImage()">
+  <a class="back-btn" routerLink="/main-menu" title="Volver al menú principal">&#8592;</a>
+  <section class="lobby-card">
+    <img class="auth-logo" src="/pokemonTcg_logo.png" alt="Pokemon TCG" />
+    <h1 class="auth-title">Buscar Partida</h1>
+    <p class="auth-subtitle">Crea o únete a una partida</p>
+
+    @if (error(); as err) {
+      <div class="lobby-message lobby-message--error">{{ err }}</div>
+    }
+
+    <!-- ── Rejoin active game ──────────────────────────────────── -->
+    @if (activeGame(); as game) {
+      <div class="lobby-rejoin">
+        <span class="lobby-rejoin-text">Tienes una partida en curso</span>
+        <button class="auth-btn lobby-rejoin-btn" type="button" (click)="rejoinGame()">
+          Volver a la Partida
+        </button>
+      </div>
+    }
+
+    <div class="lobby-create">
+      <h2 class="lobby-section-title">Nueva Partida</h2>
+      <div class="lobby-create-actions">
+        <button class="auth-btn" type="button" (click)="createGame()" [disabled]="isLoading()">
+          {{ isLoading() ? 'Creando...' : 'Crear Partida' }}
+        </button>
+        <button class="auth-btn lobby-load-btn" type="button"
+                (click)="openResumableGamesDialog()"
+                [disabled]="resumableGames().length === 0"
+                title="{{ resumableGames().length === 0 ? 'No tienes partidas para reanudar' : 'Ver tus partidas' }}">
+          Cargar Partida
+        </button>
+      </div>
+    </div>
+
+    <div class="lobby-divider"></div>
+
+    <div class="lobby-games">
+      <div class="lobby-games-header">
+        <h2 class="lobby-section-title">Partidas Disponibles</h2>
+        <button class="lobby-refresh-btn" type="button" (click)="refreshGames()"
+                [disabled]="gamesLoading()" title="Actualizar">&#x21bb;</button>
+      </div>
+
+      <!-- ── Filters ──────────────────────────────────────────── -->
+      <div class="lobby-filters">
+        @for (f of [['todas','Todas'],['publicas','Públicas'],['privadas','Privadas'],['espectar','Espectar']]; track f[0]) {
+          <button class="lobby-filter-btn"
+                  [class.active]="activeFilter() === f[0]"
+                  type="button"
+                  (click)="selectFilter($any(f[0]))">
+            {{ f[1] }}
+          </button>
+        }
+      </div>
+
+      <!-- ── Creator search ───────────────────────────────────── -->
+      <div class="lobby-search">
+        <input class="lobby-search-input"
+               type="text"
+               placeholder="Buscar por nombre del creador..."
+               (input)="onSearchInput($any($event.target).value)" />
+      </div>
+
+      @if (gamesLoading()) {
+        <p class="lobby-empty">Buscando partidas...</p>
+      } @else if (filteredGames().length === 0) {
+        <p class="lobby-empty">No hay partidas disponibles. ¡Crea una nueva!</p>
+      } @else {
+        <div class="lobby-game-list">
+          @for (game of filteredGames(); track game.gameId) {
+            <div class="lobby-game-item">
+              <div class="lobby-game-info">
+                <div class="lobby-game-title-row">
+                  @if (game.isPublic === false) {
+                    <span class="lobby-lock" title="Partida privada">&#128274;</span>
+                  }
+                  <span class="lobby-game-players">
+                    @for (player of game.players; track player.playerId; let last = $last) {
+                      {{ player.username }}@if (!last) { <span class="lobby-vs">vs</span> }
+                    }
+                  </span>
+                </div>
+                <div class="lobby-game-badges">
+                  <span class="lobby-badge" [class.badge--public]="game.isPublic !== false" [class.badge--private]="game.isPublic === false">
+                    {{ game.isPublic === false ? 'Privada' : 'Pública' }}
+                  </span>
+                  @if (game.acceptsSpectators !== false) {
+                    <span class="lobby-badge badge--spectators">Espectadores ✓</span>
+                  }
+                  <span class="lobby-badge badge--status">{{ game.status }}</span>
+                </div>
+                <span class="lobby-game-meta">{{ game.createdAt | date:'short' }}</span>
+              </div>
+              <button class="auth-btn lobby-join-btn" type="button" (click)="joinGame(game)">
+                @if (activeFilter() === 'espectar') {
+                  Espectar
+                } @else if (game.isPublic !== false) {
+                  Unirse
+                } @else {
+                  Unirse 🔒
+                }
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ── Resumable games dialog ──────────────────────────────── -->
+  @if (showResumableGamesDialog()) {
+    <div class="lobby-dialog-overlay" (click)="closeResumableGamesDialog()">
+      <div class="lobby-dialog lobby-dialog--wide" (click)="$event.stopPropagation()">
+        <h3 class="lobby-dialog-title">Tus Partidas</h3>
+        <p class="lobby-dialog-text">Selecciona una partida para reanudarla</p>
+        <div class="lobby-game-list">
+          @for (game of resumableGames(); track game.gameId) {
+            <div class="lobby-game-item">
+              <div class="lobby-game-info">
+                <div class="lobby-game-title-row">
+                  <span class="lobby-game-players">
+                    @for (player of game.players; track player.playerId; let last = $last) {
+                      {{ player.username }}@if (!last) { <span class="lobby-vs">vs</span> }
+                    }
+                  </span>
+                </div>
+                <div class="lobby-game-badges">
+                  <span class="lobby-badge badge--status">{{ game.status }}</span>
+                </div>
+                <span class="lobby-game-meta">Creada el {{ game.createdAt | date:'short' }}</span>
+              </div>
+              <button class="auth-btn lobby-join-btn" type="button" (click)="resumeGame(game)">
+                Cargar
+              </button>
+            </div>
+          }
+        </div>
+        <div class="lobby-dialog-actions">
+          <button class="lobby-cancel-btn" type="button" (click)="closeResumableGamesDialog()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Password dialog ──────────────────────────────────────── -->
+  @if (passwordDialogGameId()) {
+    <div class="lobby-dialog-overlay" (click)="cancelPassword()">
+      <div class="lobby-dialog" (click)="$event.stopPropagation()">
+        <h3 class="lobby-dialog-title">Partida Privada</h3>
+        <p class="lobby-dialog-text">Ingresa la contraseña para unirte</p>
+        @if (passwordError(); as err) {
+          <div class="lobby-message lobby-message--error">{{ err }}</div>
+        }
+        <input class="lobby-dialog-input"
+               type="password"
+               placeholder="Contraseña"
+               [value]="passwordInput()"
+               (input)="passwordInput.set($any($event.target).value)"
+               (keydown.enter)="confirmPassword()"
+               autocomplete="off" />
+        <div class="lobby-dialog-actions">
+          <button class="auth-btn" type="button"
+                  (click)="confirmPassword()"
+                  [disabled]="!passwordInput().trim()">
+            Unirse
+          </button>
+          <button class="lobby-cancel-btn" type="button" (click)="cancelPassword()">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</main>

@@ -1,0 +1,196 @@
+.cs-search {
+  margin-bottom: 0.75rem;
+}
+
+.cs-input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  font-size: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-primary);
+  font-family: 'Nunito', sans-serif;
+  box-sizing: border-box;
+}
+
+.cs-input:focus {
+  outline: 2px solid rgba(245, 158, 11, 0.4);
+  border-color: rgba(245, 158, 11, 0.8);
+}
+
+.cs-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.cs-filter-btn {
+  border: 1px solid var(--surface-border);
+  border-radius: 1.5rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+  font-family: 'Nunito', sans-serif;
+}
+
+.cs-filter-btn:hover {
+  background: rgba(30, 41, 59, 0.6);
+  color: var(--text-primary);
+}
+
+.cs-filter-btn--active {
+  background: var(--action);
+  color: #0b1120;
+  border-color: var(--action);
+}
+
+.cs-status {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem 0;
+  font-family: 'Nunito', sans-serif;
+}
+
+.cs-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cs-grid--full {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cs-grid:not(.cs-grid--full) {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+
+.cs-card-item {
+  border-radius: 0.75rem;
+  border: 1px solid var(--surface-border);
+  background: rgba(15, 23, 42, 0.4);
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 0.5rem;
+}
+
+.cs-card-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.cs-card-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2.5 / 3.5;
+  object-fit: contain;
+  display: block;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.cs-card-info {
+  padding: 0.5rem 0.6rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cs-card-name {
+  font-weight: 800;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Nunito', sans-serif;
+}
+
+.cs-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'Nunito', sans-serif;
+}
+
+.cs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.cs-page-btn {
+  border: 1px solid var(--surface-border);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 160ms ease;
+  min-width: 2rem;
+  text-align: center;
+  font-family: 'Nunito', sans-serif;
+}
+
+.cs-page-btn:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+.cs-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cs-page-btn--active {
+  background: var(--action);
+  color: #0b1120;
+  border-color: var(--action);
+}
+
+.cs-page-btn--simple {
+  min-width: auto;
+  padding: 0.35rem 0.8rem;
+}
+
+.cs-page-ellipsis {
+  color: var(--text-muted);
+  padding: 0 0.2rem;
+  font-family: 'Nunito', sans-serif;
+}
+
+.cs-page-info {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-family: 'Nunito', sans-serif;
+}
+
+@media (max-width: 640px) {
+  .cs-grid--full {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+  }
+}
+
+:host-context(.pokedex-card) .cs-pagination {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--surface);
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+  margin-top: 0.5rem;
+}

@@ -1,11 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '../../core/auth/guards';
 
-export const gameRoutes: Routes = [
+export const GAME_ROUTES: Routes = [
   {
-    path: '',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./pages/game.page').then((m) => m.GamePage),
+    path: 'spectator/:gameId',
+    loadComponent: () => import('./pages/spectator-page/spectator-page').then(m => m.SpectatorPageComponent)
   },
+  {
+    path: ':gameId',
+    loadComponent: () => import('./pages/game-page/game-page').then(m => m.GamePageComponent)
+  }
 ];

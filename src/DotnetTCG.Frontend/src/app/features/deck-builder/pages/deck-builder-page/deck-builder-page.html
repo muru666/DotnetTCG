@@ -1,0 +1,168 @@
+<div class="deck-builder-page">
+  <header class="db-header">
+    <button class="db-back-btn" (click)="goBack()">&larr; Volver</button>
+    <h1>Constructor de Mazos</h1>
+    <button class="db-req-btn" (click)="showReqModal.set(true)">Requisitos</button>
+  </header>
+
+  <div class="db-layout">
+    <!-- Left: Search & Cards -->
+    <section class="db-search-panel">
+      @if (deckService.error(); as err) {
+        <div class="db-error">{{ err }}</div>
+      }
+
+      @if (deckService.successMessage(); as msg) {
+        <div class="db-success">{{ msg }}</div>
+      }
+
+      @if (hasUnsavedChanges()) {
+        <div class="db-error">Tenés cambios sin guardar.</div>
+      }
+
+      <app-card-search
+        paginationMode="simple"
+        [showFilters]="true"
+        (cardClick)="selectCard($event)"
+      >
+        <ng-template #cardCard let-card let-first="first">
+          <div class="db-card-item" [class.selected]="selectedCard()?.id === card.id"
+               (click)="selectCard(card)">
+            <img [ngSrc]="card.imageUrl" [alt]="card.nombre" class="db-card-image" width="60" height="84" [priority]="first" />
+            <span class="db-card-name">{{ card.nombre }}</span>
+            <span class="db-card-type" [class]="'type-' + card.tipo">{{ card.tipo }}</span>
+          </div>
+        </ng-template>
+      </app-card-search>
+
+      @if (selectedCard(); as sel) {
+        <div class="db-add-panel">
+          <strong>{{ sel.nombre }}</strong>
+          <div class="db-add-controls">
+            <button class="db-btn db-btn-sm" (click)="decreaseAddQuantity()">-</button>
+            <span class="db-qty">{{ addQuantity() }}</span>
+            <button class="db-btn db-btn-sm" (click)="increaseAddQuantity()"
+                    [disabled]="addQuantity() >= maxAddQuantity(sel)">+</button>
+            <button class="db-btn db-btn-primary db-btn-sm" (click)="addToDeck()"
+                    [disabled]="!deckService.currentDeck() || maxAddQuantity(sel) < 1">Agregar al mazo</button>
+            <button class="db-btn db-btn-sm" (click)="selectedCard.set(null)">X</button>
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- Right: Filters + Deck Panel -->
+    <aside class="db-deck-panel">
+      <div class="db-filters-divider"></div>
+
+      @if (deckService.userDecks().length > 0) {
+        <div class="db-deck-selector">
+          <label class="db-deck-selector-label">Mis Mazos</label>
+          <select class="db-deck-select"
+                  [value]="deckService.currentDeck()?.id || ''"
+                  (change)="selectDeck($any($event.target).value)">
+            @for (d of deckService.userDecks(); track d.id) {
+              <option [value]="d.id">{{ d.name }} ({{ d.totalCards }} cartas)</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <p class="db-empty">No hay mazos disponibles. Creá uno nuevo.</p>
+      }
+
+      @if (deckService.currentDeck(); as deck) {
+        <div class="db-deck-info">
+          <form [formGroup]="deckNameForm" class="db-deck-name-form">
+            <input formControlName="name" type="text" placeholder="Nombre del mazo" class="db-deck-name-input" />
+          </form>
+          <div class="db-deck-actions db-new-deck-btn">
+            <button class="db-btn db-btn-primary" type="button" (click)="createNewDeck()">Nuevo mazo</button>
+          </div>
+          <div class="db-deck-stats">
+            <div class="db-stat">
+              <span class="db-stat-label">Cartas</span>
+              <span class="db-stat-value" [class.full]="deckService.totalCards() === 60"
+                    [class.over]="deckService.totalCards() > 60">
+                {{ deckService.totalCards() }}/60
+              </span>
+            </div>
+            <div class="db-stat">
+              <span class="db-stat-label">Slots libres</span>
+              <span class="db-stat-value">{{ deckService.remainingSlots() }}</span>
+            </div>
+          </div>
+          <div class="db-progress-bar">
+            <div class="db-progress-fill" [style.width.%]="Math.min(100, (deckService.totalCards() / 60) * 100)"></div>
+          </div>
+        </div>
+
+        <div class="db-deck-cards">
+          @for (dc of deckService.deckCards(); track trackDeckCardId($index, dc)) {
+            <div class="db-deck-card-item">
+              <img [ngSrc]="dc.card.imageUrl" [alt]="dc.card.nombre" class="db-deck-card-img" width="40" height="56" />
+              <div class="db-deck-card-info">
+                <span class="db-deck-card-name">{{ dc.card.nombre }}</span>
+                <div class="db-deck-card-controls">
+                  <button class="db-btn db-btn-xs" (click)="updateQuantity(dc.card.id, dc.quantity - 1)"
+                          [disabled]="dc.quantity <= 1">-</button>
+                  <span class="db-qty">{{ dc.quantity }}</span>
+                  <button class="db-btn db-btn-xs" (click)="updateQuantity(dc.card.id, dc.quantity + 1)"
+                          [disabled]="!canIncrease(dc)">+</button>
+                  <button class="db-btn db-btn-xs db-btn-danger" (click)="removeFromDeck(dc.card.id)">X</button>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <p class="db-empty">El mazo está vacío. Agrega cartas desde el panel de búsqueda.</p>
+          }
+        </div>
+
+        <div class="db-deck-actions">
+          <button class="db-btn db-btn-primary" (click)="saveDeck()" [disabled]="deckService.isLoading()">Guardar</button>
+          <button class="db-btn db-btn-danger" (click)="deleteDeck()">Eliminar</button>
+        </div>
+      } @else {
+        <div class="db-no-deck">
+          <p>No hay un mazo cargado.</p>
+          <div class="db-deck-actions">
+            <button class="db-btn db-btn-primary" type="button" (click)="createNewDeck()">Nuevo mazo</button>
+          </div>
+        </div>
+      }
+    </aside>
+  </div>
+</div>
+
+@if (showReqModal()) {
+  <div class="db-modal-overlay" (click)="showReqModal.set(false)">
+    <div class="db-modal" (click)="$event.stopPropagation()">
+      <div class="db-modal-header">
+        <h2>Requisitos del Mazo</h2>
+        <button class="db-modal-close" (click)="showReqModal.set(false)">&times;</button>
+      </div>
+      <ul class="db-req-list">
+        <li>El mazo debe tener un nombre</li>
+        <li>Debe contener exactamente <strong>60 cartas</strong></li>
+        <li>Debe tener al menos <strong>1 Pokémon Básico</strong></li>
+        <li>No puede tener más de <strong>4 copias</strong> de una misma carta (excepto Energía Básica)</li>
+      </ul>
+      <p class="db-req-note">El mazo se guarda aunque no cumpla estos requisitos, pero no podrá usarse en combates.</p>
+    </div>
+  </div>
+}
+
+@if (showUnsavedModal()) {
+  <div class="db-modal-overlay" (click)="onDiscardCancel()">
+    <div class="db-modal db-modal-sm" (click)="$event.stopPropagation()">
+      <div class="db-modal-header">
+        <h2>Cambios sin guardar</h2>
+        <button class="db-modal-close" (click)="onDiscardCancel()">&times;</button>
+      </div>
+      <p class="db-modal-body">Tenés cambios sin guardar. ¿Querés salir sin guardar?</p>
+      <div class="db-modal-actions">
+        <button class="db-btn" (click)="onDiscardCancel()">Quedarme</button>
+        <button class="db-btn db-btn-primary" (click)="onDiscardConfirm()">Salir sin guardar</button>
+      </div>
+    </div>
+  </div>
+}

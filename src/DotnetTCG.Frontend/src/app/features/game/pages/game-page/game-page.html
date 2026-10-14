@@ -1,0 +1,302 @@
+@if (loadingError()) {
+  <div class="game-error">
+    <p>No se pudo cargar la partida.</p>
+    <p class="game-error-detail">Verifica que la partida exista y que seas un jugador.</p>
+    <button class="back-btn" (click)="goBack()">Volver al Lobby</button>
+  </div>
+} @else if (gameService.gameState(); as state) {
+  @if (gameService.error(); as errMsg) {
+    <div class="game-toast-error" (click)="gameService.clearError()">
+      {{ errMsg }}
+    </div>
+  }
+
+  @if (toasts().length > 0) {
+    <div class="toast-container">
+      @for (toast of toasts(); track toast.id) {
+        <div class="toast" [class.toast-ko]="toast.type === 'POKEMON_KO'" [class.toast-victory]="toast.type === 'GAME_ENDED' || toast.type === 'GAME_START'" [class.toast-info]="toast.type === 'TURN_STARTED' || toast.type === 'TURN_END'" [class.toast-attack]="toast.type === 'ATTACK'">
+          <span>{{ toast.message }}</span>
+          <button class="toast-close" (click)="dismissToast(toast)">×</button>
+        </div>
+      }
+    </div>
+  }
+
+  @if (isDisconnected()) {
+    <button class="reconnect-btn" (click)="onReconnect()" title="Reconectar">
+      <span class="reconnect-icon">&#8635;</span>
+      <span class="reconnect-label">Reconectar</span>
+    </button>
+  }
+
+  <div class="game-page">
+    <!-- Spectator banner -->
+    @if (isSpectator()) {
+      <div class="spectator-banner">
+        <span>Modo espectador</span>
+      </div>
+    }
+
+    <!-- Setup Phase Overlay -->
+    @if (isSetup() && !showCoinFlip() && !isSpectator()) {
+      <app-setup-phase
+        [gameState]="state"
+        [playerIndex]="gameService.playerIndex()"
+        (cardDropped)="onCardDrop($event)"
+        (confirm)="gameService.setupConfirm().subscribe()"
+      />
+    }
+
+    <!-- Coin Flip Overlay (unificado: setup + in-game) -->
+    @if (showCoinFlip()) {
+      <app-coin-flip
+        [result]="(state.startingPlayerIndex ?? 0) === gameService.playerIndex() ? 'HEADS' : 'TAILS'"
+        [label]="'Decidiendo quien empieza...'"
+        [setup]="true"
+        [playerName]="playerName()"
+        [opponentName]="opponentName()"
+        (dismiss)="onCoinFlipDismiss()"
+      />
+    }
+
+    @if (coinFlipResult(); as flip) {
+      <app-coin-flip
+        [result]="flip.result"
+        [label]="flip.label"
+        [results]="flip.results ?? []"
+        (dismiss)="onCoinFlipDismiss()"
+      />
+    }
+
+    <!-- Floating action buttons -->
+    <div class="float-buttons">
+      <button class="float-btn chat-btn" [class.active]="sidePanel().isOpen && sidePanel().activeTab === 'chat'" (click)="onOpenChat()" title="Chat">
+        💬
+        @if (sidePanel().newMessageCount > 0) {
+          <span class="badge">{{ sidePanel().newMessageCount }}</span>
+        }
+      </button>
+      <button class="float-btn history-btn" [class.active]="sidePanel().isOpen && sidePanel().activeTab === 'history'" (click)="onOpenHistory()" title="Historial">
+        📋
+      </button>
+      <button class="float-btn surrender-btn" (click)="onSurrenderClick()" title="Rendirse">
+        🏳️
+      </button>
+    </div>
+
+    <!-- Surrender Confirmation -->
+    @if (showSurrenderConfirm()) {
+      <div class="confirm-overlay">
+        <div class="confirm-dialog">
+          <p class="confirm-text">¿Estás seguro de que deseas rendirte?</p>
+          <div class="confirm-actions">
+            <button class="confirm-cancel" (click)="onSurrenderCancel()">
+              Cancelar
+            </button>
+            <button class="confirm-yes" (click)="onSurrenderConfirm()">
+              Rendirme
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Opponent avatar -->
+    <div class="avatar avatar-opponent">
+      <div class="avatar-img">OP</div>
+      <span class="avatar-name">{{ opponentName() }}</span>
+    </div>
+
+    <!-- Opponent hand (face-down) -->
+    @if (!isSetup() && opponentHandCount() > 0) {
+      <div class="opponent-hand-row">
+        <span class="opponent-hand-label">{{ opponentHandCount() }} cartas</span>
+        <div class="opponent-hand-cards">
+          @for (_ of opponentHandArray(); track $index) {
+            <div class="opponent-hand-card"></div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area" cdkDropListGroup>
+      <div class="game-field">
+        <!-- Red Half (Opponent) -->
+        <div class="field-half red-half">
+          <app-player-zone
+            [board]="state.opponentBoard"
+            [playerName]="opponentName()"
+            [isOpponent]="true"
+            [isActiveTurn]="state.currentPlayerIndex !== gameService.playerIndex()"
+            (preview)="onPreviewCard($event)"
+          />
+        </div>
+
+        <!-- Divider with Pokéball and Stadium -->
+        <div class="field-divider">
+          <div class="pokeball"></div>
+          <div class="stadium-zone" [class.has-stadium]="!!state.stadiumCard">
+            @if (state.stadiumCard) {
+              <img [ngSrc]="state.stadiumCard.imageUrl" [alt]="state.stadiumCard.name" class="stadium-card-img" width="60" height="84"
+                (dblclick)="onPreviewCard(state.stadiumCard!.imageUrl); $event.stopPropagation()">
+              <span class="stadium-label">{{ state.stadiumCard.name }}</span>
+            } @else {
+              <span class="stadium-empty">Sin Estadio</span>
+            }
+          </div>
+        </div>
+
+        <!-- Blue Half (Player) -->
+        <div class="field-half blue-half">
+          <app-player-zone
+            [board]="state.myBoard"
+            [playerName]="playerName()"
+            [isOpponent]="false"
+            [isActiveTurn]="state.currentPlayerIndex === gameService.playerIndex()"
+            [isSpectator]="isSpectator()"
+            [phase]="state.phase"
+            [selectedCardIndex]="selectedCardIndex()"
+            [evolvableSlots]="evolvableSlots()"
+            (cardDrop)="onCardDrop($event)"
+            (placeCard)="onPlaceCard($event)"
+            (activeClick)="onActiveClick()"
+            (attackAction)="onAttack($event)"
+            (abilityAction)="onAbility($event)"
+            (retreatAction)="onRetreat($event)"
+            (preview)="onPreviewCard($event)"
+          />
+        </div>
+      </div>
+
+      <!-- Hand Row with Drag -->
+      @if (!isSetup()) {
+        <div class="hand-row"
+          cdkDropList
+          [cdkDropListData]="'hand'"
+          (cdkDropListDropped)="onHandCardDrop($event)">
+          @for (card of playerHand(); track $index) {
+            <app-card
+              [card]="card"
+              [draggable]="!isSpectator()"
+              [selected]="selectedCardIndex() === $index"
+              (clicked)="onCardClick($index)"
+              (preview)="onPreviewCard($event)"
+            />
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Player avatar -->
+    <div class="avatar avatar-player">
+      <span class="avatar-name">{{ playerName() }}</span>
+      <div class="avatar-img">PL</div>
+    </div>
+
+    <!-- Card Preview Overlay -->
+    @if (previewImageUrl(); as url) {
+      <div class="preview-overlay" (click)="closePreview()">
+        <img [ngSrc]="url" [alt]="'Vista previa'" class="preview-image" width="350" height="490">
+      </div>
+    }
+
+    <!-- Side Panel Overlay -->
+    @if (sidePanel().isOpen) {
+      <div class="side-panel-overlay open" (click)="onSidePanelToggle(false)"></div>
+    }
+
+    <!-- Side Panel -->
+    <div class="side-panel-container" [class.open]="sidePanel().isOpen">
+      <app-side-panel
+        [isOpen]="sidePanel().isOpen"
+        [activeTab]="sidePanel().activeTab"
+        [newMessageCount]="sidePanel().newMessageCount"
+        [chatMessages]="gameService.chatMessages()"
+        [gameHistory]="gameHistory()"
+        [currentUserId]="authService.getUserId() ?? ''"
+        (sendMessage)="onSendMessage($event)"
+        (toggle)="onSidePanelToggle($event)"
+        (tabChange)="onTabChange($event)"
+      />
+    </div>
+
+    @if (!isSetup() && !isGameOver() && !isSpectator()) {
+      <button class="float-btn end-turn-btn" (click)="onEndTurn()" title="Pasar turno">
+        ⏭️
+      </button>
+    }
+
+    @if (isGameOver()) {
+      <div class="winner-overlay">
+        <div class="winner-card">
+          @if (didPlayerWin()) {
+            <h1 class="winner-title">¡Ganaste!</h1>
+            <p class="winner-name">Victoria</p>
+          } @else {
+            <h1 class="winner-title">¡Perdiste!</h1>
+            @if (gameWinnerName(); as winner) {
+              <p class="winner-name">Ganador: {{ winner }}</p>
+            }
+          }
+          <div class="winner-actions">
+            <button class="winner-btn" (click)="goBack()">Volver al Lobby</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (disconnectCountdown() !== null && !isPaused()) {
+      <div class="winner-overlay">
+        <div class="winner-card">
+          <h1 class="winner-title">Desconexión detectada</h1>
+          <p class="winner-name">El oponente se desconectó</p>
+          @if (disconnectCountdown(); as timer) {
+            <p class="winner-info">La partida se pausará; si no se reconecta en {{ timer }} segundos</p>
+          }
+          <div class="winner-actions">
+            <button class="winner-btn" (click)="goBack()">Volver al Lobby</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (isPaused()) {
+      <div class="winner-overlay">
+        <div class="winner-card pause-card">
+          <h1 class="winner-title">Partida pausada</h1>
+          <p>Se espera la reconexión de todos los jugadores.</p>
+          <div class="pause-status">
+            <div class="pause-spinner"></div>
+            <span class="pause-text">Reconectando automáticamente...</span>
+          </div>
+          <div class="winner-actions">
+            <button class="winner-btn" (click)="goBack()">Volver al Lobby</button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="game-loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando partida...</p>
+  </div>
+}
+
+@if (gameService.isLoading() && gameService.gameState()) {
+  <div class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Procesando...</p>
+  </div>
+}
+
+@if (gameService.gameState()?.pendingChoice; as pc) {
+  @if (pc.playerId === authService.getUserId()) {
+    <app-choice-dialog
+      [pendingChoice]="pc"
+      (resolve)="onChoiceResolve($event)"
+      (cancel)="onChoiceCancel()"
+    />
+  }
+}

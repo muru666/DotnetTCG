@@ -91,6 +91,12 @@ public sealed class GameHub(
         }
 
         await Clients.Group(Group(gameId)).SendAsync("lobby", result.Value);
+
+        var updated = result.Value!;
+        if (ready && updated.Players.Count == 2 && updated.Players.All(p => p.IsReady))
+        {
+            await StartGame(gameId);
+        }
     }
 
     public async Task StartGame(Guid gameId)

@@ -1,0 +1,169 @@
+<main class="gl-page" [style.background-image]="backgroundImage()">
+
+  <button class="gl-back-btn" type="button" (click)="leaveAndGoBack()" title="Salir del lobby">
+    &#8592;
+  </button>
+
+  <section class="gl-card">
+    <img class="gl-logo" src="/pokemonTcg_logo.png" alt="Pokemon TCG" />
+    <h1 class="gl-title">Lobby</h1>
+
+    @if (error(); as err) {
+      <div class="gl-error">{{ err }}</div>
+    }
+
+    @if (isLoading() && !lobbyState()) {
+      <div class="gl-loading">
+        <div class="gl-spinner"></div>
+        <p>Cargando lobby...</p>
+      </div>
+    } @else if (lobbyState(); as state) {
+
+      <!-- ── Player list ─────────────────────────────────────── -->
+      <div class="gl-players">
+        @for (player of state.players; track player.playerId) {
+          <div class="gl-player-item" [class.gl-player-ready]="player.ready">
+
+            <!-- Avatar -->
+            <div class="gl-avatar">
+              @if (player.avatarUrl) {
+                <img [src]="player.avatarUrl" [alt]="player.username" />
+              } @else {
+                <span class="gl-avatar-initial">{{ getInitial(player.username) }}</span>
+              }
+            </div>
+
+            <!-- Name + deck info -->
+            <div class="gl-player-info">
+              <span class="gl-player-name">
+                {{ player.username }}
+                @if (player.playerId === state.creatorId) {
+                  <span class="gl-creator-badge">Host</span>
+                }
+              </span>
+              @if (player.hasDeck) {
+                <span class="gl-deck-name">{{ player.deckName }}</span>
+              } @else {
+                <span class="gl-no-deck">Sin mazo seleccionado</span>
+              }
+            </div>
+
+            <!-- Ready indicator -->
+            <div class="gl-ready-indicator" [class.is-ready]="player.ready">
+              {{ player.ready ? '✓ Listo' : 'Esperando...' }}
+            </div>
+
+            <!-- Kick button (creator only, not on self) -->
+            @if (amCreator() && player.playerId !== state.creatorId) {
+              <button class="gl-kick-btn" type="button"
+                      (click)="removePlayer(player.playerId)"
+                      title="Expulsar jugador">✕</button>
+            }
+          </div>
+        }
+
+        @if (state.players.length < 2) {
+          <div class="gl-waiting-player">
+            <div class="gl-avatar gl-avatar-empty">
+              <span class="gl-avatar-initial">?</span>
+            </div>
+            <div class="gl-player-info">
+              <span class="gl-player-name gl-muted">Esperando jugador...</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ── Game settings (creator only) ─────────────────────── -->
+      @if (amCreator()) {
+        <div class="gl-settings-section">
+          <h2 class="gl-section-title">Configuración de la Partida</h2>
+
+          <div class="gl-setting-row">
+            <label class="gl-checkbox-label">
+              <input type="checkbox"
+                     [checked]="isPublicSetting()"
+                     (change)="togglePublic()" />
+              <span>Pública</span>
+            </label>
+
+            @if (!isPublicSetting()) {
+              <div class="gl-password-row">
+                <input class="gl-input"
+                       type="password"
+                       placeholder="Contraseña"
+                       [value]="passwordInput()"
+                       (input)="passwordInput.set($any($event.target).value)"
+                       autocomplete="new-password" />
+                <button class="gl-btn gl-btn--secondary" type="button"
+                        (click)="savePassword()"
+                        [disabled]="!passwordInput().trim()">
+                  {{ passwordSaved() ? '✓ Guardada' : 'Aceptar' }}
+                </button>
+              </div>
+            }
+          </div>
+
+          <div class="gl-setting-row">
+            <label class="gl-checkbox-label">
+              <input type="checkbox"
+                     [checked]="acceptsSpectatorsSetting()"
+                     (change)="toggleAcceptsSpectators()" />
+              <span>Aceptar espectadores</span>
+            </label>
+          </div>
+        </div>
+      }
+
+      <!-- ── Deck selector and ready button (players only, not spectators) ── -->
+      @if (!isSpectator()) {
+        @if (myPlayer(); as me) {
+          <div class="gl-deck-section">
+            <h2 class="gl-section-title">Tu Mazo</h2>
+
+            @if (validDecks.length === 0) {
+              <p class="gl-muted">No tienes mazos válidos.
+                <button class="gl-link-btn" type="button" (click)="goToDeckBuilder()">Crea uno aquí</button>.
+              </p>
+            } @else {
+              <div class="gl-deck-row">
+                <select class="gl-select"
+                        [ngModel]="selectedDeckId()"
+                        (ngModelChange)="selectedDeckId.set($event)">
+                  @for (deck of validDecks; track deck.id) {
+                    <option [value]="deck.id">{{ deck.name }} ({{ deck.totalCards }}/60)</option>
+                  }
+                </select>
+                <button class="gl-btn gl-btn--secondary" type="button" (click)="confirmDeck()"
+                        [disabled]="!selectedDeckId()">
+                  {{ me.hasDeck ? 'Cambiar mazo' : 'Confirmar mazo' }}
+                </button>
+              </div>
+              @if (me.hasDeck) {
+                <p class="gl-deck-confirmed">Mazo seleccionado: <strong>{{ me.deckName }}</strong></p>
+              }
+            }
+          </div>
+
+          <button class="gl-btn"
+                  [class.gl-btn--ready]="!me.ready"
+                  [class.gl-btn--unready]="me.ready"
+                  type="button"
+                  (click)="toggleReady()"
+                  [disabled]="!canReady() && !me.ready">
+            {{ me.ready ? '✓ Listo — Click para cancelar' : 'Marcar como Listo' }}
+          </button>
+
+          @if (!canReady() && !me.ready) {
+            <p class="gl-hint">Selecciona un mazo para poder marcar listo</p>
+          }
+        }
+      } @else {
+        <p class="gl-muted gl-spectator-notice">Estás viendo esta partida como espectador</p>
+      }
+
+      <!-- ── Players count ─────────────────────────────────────── -->
+      <p class="gl-count">{{ state.players.length }}/2 jugadores conectados</p>
+    }
+  </section>
+</main>

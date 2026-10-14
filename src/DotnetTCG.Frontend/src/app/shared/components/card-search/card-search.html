@@ -1,0 +1,107 @@
+<div class="cs-search">
+  <input
+    class="cs-input"
+    type="text"
+    placeholder="Buscar carta..."
+    [ngModel]="query()"
+    (ngModelChange)="onSearch($event)"
+  />
+</div>
+
+@if (showFilters()) {
+  <div class="cs-filters">
+    @for (t of ['POKEMON', 'ENERGY', 'TRAINER']; track t) {
+      <button
+        class="cs-filter-btn"
+        [class.cs-filter-btn--active]="tipoFilter() === t"
+        type="button"
+        (click)="setTipo(t)"
+      >
+        {{ t === 'POKEMON' ? 'Pokémon' : t === 'ENERGY' ? 'Energía' : 'Entrenador' }}
+      </button>
+    }
+  </div>
+}
+
+@if (isLoading()) {
+  <p class="cs-status cs-status--loading">Cargando cartas...</p>
+} @else if (results().length === 0) {
+  <p class="cs-status cs-status--empty">No se encontraron cartas.</p>
+} @else {
+  <div class="cs-grid" [class.cs-grid--full]="paginationMode() === 'full'">
+    @for (card of results(); track card.id) {
+      @if (cardCardTemplate) {
+        <ng-template
+          [ngTemplateOutlet]="cardCardTemplate"
+          [ngTemplateOutletContext]="{ $implicit: card, first: $first }"
+        />
+      } @else {
+        <div class="cs-card-item" (click)="onCardClick(card)">
+          <img [ngSrc]="card.imageUrl" [alt]="card.nombre" class="cs-card-img" width="60" height="84" [priority]="$first" />
+          <div class="cs-card-info">
+            <span class="cs-card-name">{{ card.nombre }}</span>
+            <span class="cs-card-meta">{{ card.tipo === 'POKEMON' ? 'PS ' + card.hp : card.tipo }}</span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+}
+
+@if (totalPages() > 1) {
+  <div class="cs-pagination">
+    @switch (paginationMode()) {
+      @case ('full') {
+        <button
+          class="cs-page-btn"
+          type="button"
+          [disabled]="currentPage() === 0"
+          (click)="goToPage(0)"
+          title="Primera página"
+        >&laquo;&laquo;</button>
+
+        @for (p of getPaginationPages(); track $index) {
+          @if (p === null) {
+            <span class="cs-page-ellipsis">...</span>
+          } @else {
+            <button
+              class="cs-page-btn"
+              [class.cs-page-btn--active]="p === currentPage()"
+              type="button"
+              (click)="goToPage(p)"
+            >{{ p + 1 }}</button>
+          }
+        }
+
+        <button
+          class="cs-page-btn"
+          type="button"
+          [disabled]="currentPage() >= totalPages() - 1"
+          (click)="goToPage(totalPages() - 1)"
+          title="Última página"
+        >&raquo;&raquo;</button>
+      }
+
+      @case ('simple') {
+        <button
+          class="cs-page-btn cs-page-btn--simple"
+          type="button"
+          [disabled]="currentPage() === 0"
+          (click)="goToPage(currentPage() - 1)"
+        >&laquo; Anterior</button>
+
+        <span class="cs-page-info">
+          Pág. {{ currentPage() + 1 }} de {{ totalPages() }}
+          ({{ totalElements() }} cartas)
+        </span>
+
+        <button
+          class="cs-page-btn cs-page-btn--simple"
+          type="button"
+          [disabled]="currentPage() >= totalPages() - 1"
+          (click)="goToPage(currentPage() + 1)"
+        >Siguiente &raquo;</button>
+      }
+    }
+  </div>
+}

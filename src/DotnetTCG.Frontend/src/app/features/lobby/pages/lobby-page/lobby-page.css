@@ -1,0 +1,401 @@
+.back-btn {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  border: 2px solid var(--action, #f59e0b);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  color: var(--action, #f59e0b);
+  font-size: 1.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.back-btn:hover {
+  background: var(--action, #f59e0b);
+  color: #0b1120;
+  transform: scale(1.1);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+}
+
+.lobby-card {
+  position: relative;
+  width: min(36rem, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem 1.5rem 1.5rem;
+  border-radius: 1.2rem;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1.2rem 2.4rem rgba(2, 6, 23, 0.45);
+  animation: cardReveal 520ms ease-out;
+}
+
+.lobby-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lobby-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.lobby-message {
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.95rem;
+  font-size: 0.95rem;
+}
+
+.lobby-message--error {
+  background: rgba(127, 29, 29, 0.4);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #fecaca;
+}
+
+.lobby-section-title {
+  margin: 0 0 0.75rem;
+  font-family: 'Bungee', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+.lobby-create {
+  margin-bottom: 0.5rem;
+}
+
+.lobby-create-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.lobby-create-actions .auth-btn {
+  flex: 1;
+}
+
+.lobby-load-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-field {
+  margin-bottom: 0.85rem;
+}
+
+.lobby-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.lobby-select {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  font-size: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-primary);
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23d1d5db'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  padding-right: 2rem;
+}
+
+.lobby-select:focus {
+  outline: 2px solid rgba(245, 158, 11, 0.4);
+  border-color: rgba(245, 158, 11, 0.8);
+}
+
+.lobby-select option {
+  background: #0f172a;
+  color: var(--text-primary);
+}
+
+.lobby-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.lobby-divider {
+  height: 1px;
+  background: var(--surface-border);
+  margin: 1.25rem 0;
+}
+
+.lobby-games-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.lobby-games-header .lobby-section-title {
+  margin-bottom: 0;
+}
+
+.lobby-refresh-btn {
+  border: 1px solid var(--surface-border);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 1.1rem;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.lobby-refresh-btn:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+.lobby-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-game-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.lobby-game-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--surface-border);
+  background: rgba(15, 23, 42, 0.5);
+  transition: background 160ms ease;
+}
+
+.lobby-game-item:hover {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.lobby-game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.lobby-game-players {
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lobby-vs {
+  color: var(--action);
+  font-family: 'Bungee', sans-serif;
+  font-size: 0.75rem;
+  margin: 0 0.3rem;
+}
+
+.lobby-game-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.lobby-join-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* ── Rejoin banner ───────────────────────────────────────────────────────── */
+.lobby-rejoin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+  margin-bottom: 1rem;
+}
+.lobby-rejoin-text {
+  font-size: 0.9rem;
+  color: #4ade80;
+  font-weight: 700;
+}
+.lobby-rejoin-btn {
+  flex-shrink: 0;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* ── Filters ─────────────────────────────────────────────────────────────── */
+.lobby-filters {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.lobby-filter-btn {
+  border: 1px solid var(--surface-border);
+  border-radius: 2rem;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.lobby-filter-btn.active,
+.lobby-filter-btn:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--action, #f59e0b);
+  color: var(--action, #f59e0b);
+}
+
+/* ── Creator search ──────────────────────────────────────────────────────── */
+.lobby-search {
+  margin-bottom: 0.75rem;
+}
+.lobby-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+  font-family: 'Nunito', sans-serif;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-primary, #f1f5f9);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.lobby-search-input:focus { border-color: var(--action, #f59e0b); }
+.lobby-search-input::placeholder { color: var(--text-muted, #64748b); }
+
+/* ── Game badges ─────────────────────────────────────────────────────────── */
+.lobby-game-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.lobby-lock { font-size: 0.85rem; }
+.lobby-game-badges {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.lobby-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.4rem;
+  background: rgba(100, 116, 139, 0.2);
+  color: var(--text-muted);
+}
+.badge--public { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+.badge--private { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+.badge--spectators { background: rgba(99, 179, 237, 0.12); color: #63b3ed; }
+.badge--status { background: rgba(245, 158, 11, 0.12); color: var(--action, #f59e0b); }
+
+/* ── Password dialog ─────────────────────────────────────────────────────── */
+.lobby-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.lobby-dialog {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 1rem;
+  padding: 1.75rem 1.5rem;
+  width: min(24rem, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 1.2rem 2.4rem rgba(2, 6, 23, 0.6);
+}
+.lobby-dialog-title {
+  margin: 0;
+  font-family: 'Bungee', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+.lobby-dialog-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.lobby-dialog-input {
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 0.7rem;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.95rem;
+  font-family: 'Nunito', sans-serif;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-primary);
+  outline: none;
+}
+.lobby-dialog-input:focus { border-color: var(--action, #f59e0b); }
+.lobby-dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.lobby-cancel-btn {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.7rem;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.lobby-cancel-btn:hover { background: rgba(30, 41, 59, 0.6); }
+
+.lobby-dialog--wide {
+  width: min(30rem, 90vw);
+  max-height: 80vh;
+}
+
+.lobby-dialog--wide .lobby-game-list {
+  overflow-y: auto;
+  max-height: 50vh;
+  padding-right: 0.3rem;
+}
+
+.lobby-dialog--wide .lobby-game-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lobby-dialog--wide .lobby-game-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}

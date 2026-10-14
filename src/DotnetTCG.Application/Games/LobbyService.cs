@@ -4,7 +4,7 @@ using DotnetTCG.Domain.Enums;
 
 namespace DotnetTCG.Application.Games;
 
-public sealed record LobbyPlayerDto(Guid UserId, int Order, Guid? DeckId, bool IsReady);
+public sealed record LobbyPlayerDto(Guid UserId, int Order, Guid? DeckId, bool IsReady, string Username);
 
 public sealed record LobbyDto(
     Guid Id,
@@ -31,7 +31,7 @@ public sealed class LobbyService(
             creatorId, isPublic, acceptsSpectators,
             string.IsNullOrWhiteSpace(password) ? null : hasher.Hash(password),
             null, 0,
-            [new GamePlayerData(creatorId, 0, null, false)],
+            [new GamePlayerData(creatorId, 0, null, false, Username: string.Empty)],
             now);
         await games.AddAsync(game, cancellationToken);
         return Result<LobbyDto>.Success(ToDto(game));
@@ -55,7 +55,7 @@ public sealed class LobbyService(
 
         var updated = game with
         {
-            Players = [.. game.Players, new GamePlayerData(userId, 1, null, false)],
+            Players = [.. game.Players, new GamePlayerData(userId, 1, null, false, Username: string.Empty)],
             UpdatedAt = clock.UtcNow,
         };
         return await SaveAsync(updated, cancellationToken);
@@ -229,5 +229,5 @@ public sealed class LobbyService(
         game.CreatorId,
         game.IsPublic,
         game.AcceptsSpectators,
-        game.Players.Select(p => new LobbyPlayerDto(p.UserId, p.Order, p.DeckId, p.IsReady)).ToList());
+        game.Players.Select(p => new LobbyPlayerDto(p.UserId, p.Order, p.DeckId, p.IsReady, p.Username)).ToList());
 }

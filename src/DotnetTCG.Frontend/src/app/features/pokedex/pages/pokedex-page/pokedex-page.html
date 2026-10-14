@@ -1,0 +1,176 @@
+<main class="auth-page" [style.background-image]="backgroundImage()">
+  <a class="back-btn" routerLink="/main-menu" title="Volver al menú principal">&#8592;</a>
+
+  <div class="pokedex-layout pokedex-card">
+    <header class="pokedex-header">
+      <h1 class="pokedex-title">Pokédex</h1>
+      <p class="pokedex-subtitle">Explora todas las cartas disponibles</p>
+    </header>
+
+    <app-card-search
+      paginationMode="simple"
+      [showFilters]="true"
+      (cardClick)="openCard($event)"
+    />
+  </div>
+</main>
+
+@if (selectedCard(); as card) {
+  <div class="pokedex-overlay" (click)="closeCard()">
+    <div class="pokedex-modal" (click)="$event.stopPropagation()">
+      <button class="pokedex-modal-close" type="button" (click)="closeCard()">&times;</button>
+
+      <div class="pokedex-modal-container">
+        <div class="pokedex-modal-body">
+          <div class="pokedex-modal-img-wrap">
+            <img [ngSrc]="card.imageUrl" [alt]="card.nombre" class="pokedex-modal-img" width="200" height="280" priority />
+          </div>
+
+          <div class="pokedex-modal-info">
+            <h2 class="pokedex-modal-name">{{ card.nombre }}</h2>
+
+            <div class="pokedex-modal-type"
+              [class.pokedex-modal-type--pokemon]="card.tipo === 'POKEMON'"
+              [class.pokedex-modal-type--energy]="card.tipo === 'ENERGY'"
+              [class.pokedex-modal-type--trainer]="card.tipo === 'TRAINER'"
+            >
+              {{ card.tipo === 'POKEMON' ? 'Pokémon' : card.tipo === 'ENERGY' ? 'Energía' : 'Entrenador' }}
+            </div>
+
+            @if (card.subtypes && card.subtypes.length > 0) {
+              <div class="pokedex-modal-tags">
+                @for (s of card.subtypes; track s) {
+                  <span class="pokedex-modal-tag">{{ s }}</span>
+                }
+              </div>
+            }
+
+            @if (card.tipo === 'POKEMON') {
+              <div class="pokedex-modal-stat-row">
+                <div class="pokedex-modal-stat">
+                  <span class="pokedex-modal-stat-label">PS</span>
+                  <span class="pokedex-modal-stat-value">{{ card.hp ?? '—' }}</span>
+                </div>
+                @if (card.energyType) {
+                  <div class="pokedex-modal-stat">
+                    <span class="pokedex-modal-stat-label">Tipo</span>
+                    <span class="pokedex-modal-stat-value">{{ card.energyType }}</span>
+                  </div>
+                }
+                @if (card.retreatCost !== undefined && card.retreatCost !== null) {
+                  <div class="pokedex-modal-stat">
+                    <span class="pokedex-modal-stat-label">Retirada</span>
+                    <span class="pokedex-modal-stat-value">{{ card.retreatCost }}</span>
+                  </div>
+                }
+              </div>
+
+              @if (card.evolvesFrom) {
+                <div class="pokedex-modal-stat">
+                  <span class="pokedex-modal-stat-label">Evoluciona de</span>
+                  <span class="pokedex-modal-stat-value">{{ card.evolvesFrom }}</span>
+                </div>
+              }
+            }
+
+            @if (card.tipo === 'ENERGY' && card.energyType) {
+              <div class="pokedex-modal-stat">
+                <span class="pokedex-modal-stat-label">Tipo de Energía</span>
+                <span class="pokedex-modal-stat-value">{{ card.energyType }}</span>
+              </div>
+            }
+
+            @if (card.rules && card.rules.length > 0) {
+              <div class="pokedex-modal-section">
+                <h3 class="pokedex-modal-section-title">Reglas</h3>
+                @for (r of card.rules; track r) {
+                  <p class="pokedex-modal-rule">{{ r }}</p>
+                }
+              </div>
+            }
+
+            @if (card.abilities && card.abilities.length > 0) {
+              <div class="pokedex-modal-section">
+                <h3 class="pokedex-modal-section-title">Habilidades</h3>
+                @for (ab of card.abilities; track ab.name) {
+                  <div class="pokedex-modal-ability">
+                    <div class="pokedex-modal-ability-header">
+                      <strong class="pokedex-modal-ability-name">{{ ab.name }}</strong>
+                      @if (ab.type) {
+                        <span class="pokedex-modal-ability-type">{{ ab.type }}</span>
+                      }
+                    </div>
+                    @if (ab.description) {
+                      <p class="pokedex-modal-ability-desc">{{ ab.description }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            @if (card.attacks && card.attacks.length > 0) {
+              <div class="pokedex-modal-section">
+                <h3 class="pokedex-modal-section-title">Ataques</h3>
+                @for (atk of card.attacks; track atk.name) {
+                  <div class="pokedex-modal-attack">
+                    <div class="pokedex-modal-attack-header">
+                      @if (atk.cost && atk.cost.length > 0) {
+                        <span class="pokedex-modal-attack-cost">
+                          @for (c of atk.cost; track c) {
+                            <span class="pokedex-modal-energy">{{ c }}</span>
+                          }
+                        </span>
+                      }
+                      <strong class="pokedex-modal-attack-name">{{ atk.name }}</strong>
+                      @if (atk.damage) {
+                        <span class="pokedex-modal-attack-damage">{{ atk.damage }}</span>
+                      }
+                    </div>
+                    @if (atk.description) {
+                      <p class="pokedex-modal-attack-desc">{{ atk.description }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            @if ((card.weaknesses && card.weaknesses.length > 0) || (card.resistances && card.resistances.length > 0)) {
+              <div class="pokedex-modal-stat-row">
+                @for (w of card.weaknesses; track w.type) {
+                  <div class="pokedex-modal-stat">
+                    <span class="pokedex-modal-stat-label">Debilidad</span>
+                    <span class="pokedex-modal-stat-value">{{ w.type }}{{ w.value ? ' ×' + w.value : '' }}</span>
+                  </div>
+                }
+                @for (r of card.resistances; track r.type) {
+                  <div class="pokedex-modal-stat">
+                    <span class="pokedex-modal-stat-label">Resistencia</span>
+                    <span class="pokedex-modal-stat-value">{{ r.type }}{{ r.value ? ' −' + r.value : '' }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (card.rarity) {
+              <div class="pokedex-modal-stat-row pokedex-modal-footer-info">
+                <div class="pokedex-modal-stat">
+                  <span class="pokedex-modal-stat-label">Rareza</span>
+                  <span class="pokedex-modal-stat-value">{{ card.rarity }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="pokedex-modal-footer">
+          <button class="pokedex-modal-nav-btn" type="button" [disabled]="!hasPrevCard()" (click)="prevCard()">
+            &#9664; Anterior
+          </button>
+          <button class="pokedex-modal-nav-btn pokedex-modal-nav-btn--right" type="button" [disabled]="!hasNextCard()" (click)="nextCard()">
+            Siguiente &#9654;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
