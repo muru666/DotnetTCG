@@ -57,6 +57,7 @@ public static class DependencyInjection
         });
         services.AddScoped<IPokeApiClient>(sp =>
             sp.GetRequiredService<PokeApiClient>());
+        services.AddScoped<CardSeedService>();
 
         return services;
     }

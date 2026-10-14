@@ -6,6 +6,7 @@ using DotnetTCG.Application.Auth;
 using DotnetTCG.Api.Hubs;
 using DotnetTCG.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -99,6 +100,18 @@ builder.Services.AddCors(options =>
 
 var pathBase = builder.Configuration.GetValue<string>("PathBase");
 var app = builder.Build();
+
+if (args is ["seed-cards", var seedPath])
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    await services.GetRequiredService<DotnetTCG.Infrastructure.Persistence.AppDbContext>()
+        .Database.MigrateAsync();
+    var seeder = services.GetRequiredService<DotnetTCG.Infrastructure.External.CardSeedService>();
+    var count = await seeder.SeedFromFileAsync(seedPath, CancellationToken.None);
+    Console.WriteLine($"Seeded {count} cards from {seedPath}.");
+    return;
+}
 
 if (!string.IsNullOrWhiteSpace(pathBase))
 {

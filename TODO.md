@@ -164,7 +164,9 @@
 
 ## F5 — Hardening
 
-- [ ] Seed XY1 146 versionado (sin users fijos, CLI `create-admin`).
+- [x] Seed XY1 146 versionado: `data/xy1.json` (payload crudo de la API, commiteado) +
+      `dotnet run -- seed-cards <path>` (migra + upsert idempotente, verificado: 146/146).
+      Ya no se llama a la API para seedear. Resta: CLI `create-admin`.
 - [ ] Verificar registry vs datos reales xy1: test de integración que importe el set
       y afirme que los nombres de ataques/habilidades/estadios xy1 mapean a behaviors
       (los `Aliases`/fallback quedan medidos, no asumidos).
