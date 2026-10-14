@@ -14,5 +14,10 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/decks/decks.routes').then((m) => m.decksRoutes),
   },
+  {
+    path: 'lobby',
+    loadChildren: () =>
+      import('./features/lobby/lobby.routes').then((m) => m.lobbyRoutes),
+  },
   { path: '**', component: NotFoundPage },
 ];

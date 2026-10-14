@@ -64,7 +64,7 @@ public sealed class GameExecutionService(
         GameState state;
         try
         {
-            state = engine.NewGame(deckCards[0], deckCards[1], startingPlayer);
+            state = engine.NewGame(deckCards[0], deckCards[1], startingPlayer, gameId: gameId);
         }
         catch (InvalidOperationException ex)
         {

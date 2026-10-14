@@ -56,6 +56,9 @@ public sealed class GameExecutionServiceTests
         var started = await execution.StartGameAsync(gameId, CancellationToken.None);
         Assert.True(started.IsSuccess, started.Error?.Message);
 
+        var loaded = await execution.LoadGameStateAsync(gameId, user0, CancellationToken.None);
+        Assert.Equal(gameId, loaded.Value!.Id);
+
         return new Harness(lobby, execution, games, logs, user0, user1, gameId);
     }
 

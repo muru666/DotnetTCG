@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { SessionStore } from '../auth/session';
 import { SoundService } from '../sound/sound';
+import { GameHubService } from '../realtime/game-hub.service';
 
 @Component({
   selector: 'app-shell',
@@ -101,10 +102,12 @@ export class AppShell {
   protected readonly isAuthenticated = this.store.isAuthenticated;
   protected readonly sound = inject(SoundService);
   private readonly sessionStore = inject(SessionStore);
+  private readonly hub = inject(GameHubService);
   private readonly router = inject(Router);
 
   protected logout(): void {
     this.sessionStore.clear();
+    void this.hub.disconnect();
     void this.router.navigate(['/login']);
   }
 }

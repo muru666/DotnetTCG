@@ -152,8 +152,12 @@
       preview overlay). Verificado contra backend real con xy1 importado (146):
       search/add/5ta copia/validate responden lo esperado (el servidor permite >4
       en construcción y lo marca en validate; el FE previene para UX).
-- [ ] F4.3 Lobby por SignalR (`/hubs/game` + `?access_token=`): crear/unirse
+- [x] F4.3 Lobby por SignalR (`/hubs/game` + `?access_token=`): crear/unirse
       (password), seleccionar mazo, ready, start → navegar a `/games/:id`.
+      `core/realtime/game-hub.service.ts` (una conexión, auto-reconnect, invoke/on
+      tipados). Verificado con cliente Node real por WebSocket (joins, decks válidos,
+      ready×2, start, chat). Fix de dominio encontrado: `GameState.Id` ahora es el
+      del lobby (antes un Guid nuevo por snapshot, incorrelacionable).
 - [ ] F4.4 Tablero por SignalR: zonas en grid (activo/banca/mano/premios/descarte/
       estadio rival y propio), mano propia completa (la rival solo conteo, ya lo
       garantiza el proyector), panel de acciones por fase + `pendingChoice`,

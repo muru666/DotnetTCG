@@ -60,7 +60,8 @@ public sealed class GameEngine
         IReadOnlyList<Card> deck0,
         IReadOnlyList<Card> deck1,
         int startingPlayerIndex,
-        bool suddenDeath = false)
+        bool suddenDeath = false,
+        Guid? gameId = null)
     {
         var errors0 = _services.Rules.ValidateDeck(deck0);
         var errors1 = _services.Rules.ValidateDeck(deck1);
@@ -69,7 +70,7 @@ public sealed class GameEngine
             throw new InvalidOperationException(
                 "Invalid decks: " + string.Join("; ", errors.Select(e => e.Code)));
 
-        var state = new GameState(new PlayerBoard(), new PlayerBoard(), startingPlayerIndex, suddenDeath);
+        var state = new GameState(new PlayerBoard(), new PlayerBoard(), startingPlayerIndex, suddenDeath, gameId);
         _services.Setup.InitializeDeal(state, deck0, deck1, _services.Random);
         return state;
     }
