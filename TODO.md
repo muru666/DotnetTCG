@@ -1,6 +1,6 @@
 # PokemonTCG (.NET) — TODO
 
-> F0 ✅ hecho. F1 ✅ hecho (127 tests, engine ≥90%). Leyenda: `[x]` hecho, `[ ]` pendiente.
+> Estado: F0–F3b ✅ hechos (403 tests, cobertura 90.1%). Leyenda: `[x]` hecho, `[ ]` pendiente.
 
 ## F1 — Dominio puro TDD (`src/DotnetTCG.Domain`)
 
@@ -71,8 +71,6 @@
       al segundo ready (desvío documentado, cosmético).
 - [x] Tests: lobby (9), ejecución con engine real lobby→setup→partida→`FINISHED` + pausa +
       retry de concurrencia, snapshot round-trip mid-game. Total suite: 171 verdes.
-
-## F3a — API REST
 
 ## F3a — API REST
 
