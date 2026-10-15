@@ -273,9 +273,16 @@ public sealed class GameHub(
             await using var scope = scopes.CreateAsyncScope();
             var scopedExecution = scope.ServiceProvider.GetRequiredService<GameExecutionService>();
             var scopedLobby = scope.ServiceProvider.GetRequiredService<LobbyService>();
+            // El Hub ya esta disposed en background: se usa el contexto global.
+            var hubs = scope.ServiceProvider.GetRequiredService<IHubContext<GameHub>>();
             var paused = await scopedExecution.PauseAsync(gameId, userId, CancellationToken.None);
             if (paused.IsSuccess)
                 await PushStatesAsync(scopedLobby, scopedExecution, gameId, CancellationToken.None);
+
+            // En lobby, el desconectado sale: el lobby solo persiste con conectados.
+            var stale = await scopedLobby.LeaveStaleAsync(gameId, userId, CancellationToken.None);
+            if (stale is not null)
+                await hubs.Clients.Group(Group(gameId)).SendAsync("lobby", stale);
         }
         catch (OperationCanceledException)
         {

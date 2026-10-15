@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { BackgroundImageService } from '../../../../core/services/background-image.service';
 import { DeckBuilderService, Card } from '../../../../shared/services/api/deck-builder.service';
 import { CardSearchComponent } from '../../../../shared/components/card-search/card-search';
 
@@ -14,11 +13,10 @@ import { CardSearchComponent } from '../../../../shared/components/card-search/c
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PokedexPage {
-  private readonly backgroundImageService = inject(BackgroundImageService);
   private readonly deckBuilderService = inject(DeckBuilderService);
 
-  protected readonly backgroundImage = signal(this.backgroundImageService.getAuthBackgroundImage());
   protected selectedCard = signal<Card | null>(null);
+  protected readonly totalCards = this.deckBuilderService.totalElements;
 
   private readonly results = this.deckBuilderService.searchResults;
 

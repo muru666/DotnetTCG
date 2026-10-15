@@ -29,4 +29,7 @@ public sealed class GameConnectionTracker
 
     public bool HasConnection(Guid userId, Guid gameId)
         => _connections.Values.Any(c => c.UserId == userId && c.GameId == gameId);
+
+    public bool IsConnected(Guid userId)
+        => _connections.Values.Any(c => c.UserId == userId);
 }

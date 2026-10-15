@@ -194,6 +194,21 @@ public sealed class LobbyService(
         return lobby.Select(ToDto).ToList();
     }
 
+    /// <summary>
+    /// Saca del lobby a un usuario desconectado, solo si la partida sigue en lobby.
+    /// Devuelve el lobby actualizado, o null si no habia nada que hacer.
+    /// </summary>
+    public async Task<LobbyDto?> LeaveStaleAsync(Guid gameId, Guid userId, CancellationToken cancellationToken)
+    {
+        var game = await games.GetByIdAsync(gameId, cancellationToken);
+        if (game is null || game.Status != GameStatus.InLobby)
+            return null;
+        if (game.Players.All(p => p.UserId != userId))
+            return null;
+        var left = await LeaveAsync(gameId, userId, cancellationToken);
+        return left.IsSuccess ? left.Value!.Lobby : null;
+    }
+
     public async Task<int> CleanupStaleAsync(DateTimeOffset olderThan, CancellationToken cancellationToken)
     {
         var lobby = await games.ListLobbyAsync(cancellationToken);

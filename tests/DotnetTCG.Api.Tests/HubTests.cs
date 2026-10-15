@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using DotnetTCG.Api.Hubs;
@@ -22,6 +23,9 @@ public sealed class HubTests
     private static readonly TestFactory Factory = new();
 
     private sealed record IdDto(Guid Id);
+    private sealed record LobbyDto(Guid Id);
+    private sealed record LobbyView(List<LobbyPlayerView> Players);
+    private sealed record LobbyPlayerView(Guid UserId);
 
     private sealed class Collector
     {
@@ -309,6 +313,95 @@ public sealed class HubTests
         var blocked = await rest.PostAsJsonAsync($"/v1/games/{gameId}/actions",
             new { type = "PassTurn" });
         Assert.Contains("Game.Paused", await blocked.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Lobby_HiddenUntilCreatorConnected()
+    {
+        if (!await DbAsync())
+            return;
+        var token0 = await RegisterTokenAsync("lc0");
+
+        var rest = Factory.CreateClient();
+        rest.DefaultRequestHeaders.Authorization = new("Bearer", token0);
+        var created = await rest.PostAsJsonAsync("/v1/games", new { isPublic = true });
+        var gameId = (await created.Content.ReadFromJsonAsync<IdDto>())!.Id;
+
+        // Creador desconectado: el lobby no se lista.
+        var hidden = await rest.GetFromJsonAsync<List<LobbyDto>>("/v1/games");
+        Assert.Empty(hidden!);
+
+        var c0 = new Collector();
+        await using (var h0 = await ConnectAsync(Factory, token0, c0))
+        {
+            await h0.InvokeAsync("JoinLobby", gameId, null);
+            await c0.WaitForAsync("lobby");
+
+            var visible = await rest.GetFromJsonAsync<List<LobbyDto>>("/v1/games");
+            Assert.Single(visible!);
+        }
+
+        // Creador desconectado de nuevo: el lobby vuelve a ocultarse (gracia mediante
+        // sigue existiendo, pero sin conectados no se lista).
+        var gone = await rest.GetFromJsonAsync<List<LobbyDto>>("/v1/games");
+        Assert.Empty(gone!);
+    }
+
+    [Fact]
+    public async Task Disconnect_RemovesPlayerFromLobbyAfterGrace()
+    {
+        if (!await DbAsync())
+            return;
+        var fakeTime = new FakeTimeProvider();
+        using var factory = Factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<TimeProvider>(fakeTime)));
+        var token0 = await RegisterTokenAsync("dl0");
+        var token1 = await RegisterTokenAsync("dl1");
+
+        var rest = factory.CreateClient();
+        rest.DefaultRequestHeaders.Authorization = new("Bearer", token0);
+        var created = await rest.PostAsJsonAsync("/v1/games", new { isPublic = true });
+        var gameId = (await created.Content.ReadFromJsonAsync<IdDto>())!.Id;
+        rest.DefaultRequestHeaders.Authorization = new("Bearer", token1);
+        await rest.PostAsJsonAsync($"/v1/games/{gameId}/join", new { });
+
+        var tracker = factory.Services.GetRequiredService<GameConnectionTracker>();
+        var user0Id = JwtSubject(token0);
+        var user1Id = JwtSubject(token1);
+        var c0 = new Collector();
+        var h0 = await ConnectAsync(factory, token0, c0);
+        await h0.InvokeAsync("JoinLobby", gameId, null);
+        await c0.WaitForAsync("lobby");
+        var h1 = await ConnectAsync(factory, token1, new Collector());
+        await h1.InvokeAsync("JoinLobby", gameId, null);
+        c0.Drain("lobby");
+
+        // Se cae el invitado: tras la gracia sale del lobby y el creador lo ve.
+        await h1.DisposeAsync();
+        var deadline = Stopwatch.StartNew();
+        while (tracker.HasConnection(user1Id, gameId)
+               && deadline.Elapsed < TimeSpan.FromSeconds(10))
+            await Task.Delay(200);
+        fakeTime.Advance(TimeSpan.FromSeconds(16));
+        // El creador recibe el lobby actualizado por push...
+        var updated = await c0.WaitForAsync("lobby");
+        Assert.Equal(1, updated.GetProperty("players").GetArrayLength());
+        // ...y por REST el invitado ya no esta.
+        rest.DefaultRequestHeaders.Authorization = new("Bearer", token0);
+        var lobbyNow = await rest.GetFromJsonAsync<LobbyView>($"/v1/games/{gameId}/lobby");
+        Assert.Single(lobbyNow!.Players);
+
+        // Se cae el creador: tras la gracia el lobby se borra.
+        await h0.DisposeAsync();
+        deadline.Restart();
+        while (tracker.HasConnection(user0Id, gameId)
+               && deadline.Elapsed < TimeSpan.FromSeconds(10))
+            await Task.Delay(200);
+        fakeTime.Advance(TimeSpan.FromSeconds(16));
+        await Task.Delay(500);
+        var gone = await rest.GetAsync($"/v1/games/{gameId}/lobby");
+        Assert.Equal(HttpStatusCode.NotFound, gone.StatusCode);
     }
 
     private static Guid JwtSubject(string token)

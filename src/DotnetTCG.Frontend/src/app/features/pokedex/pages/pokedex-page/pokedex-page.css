@@ -1,54 +1,98 @@
-.back-btn {
-  position: fixed;
-  top: 1.5rem;
-  left: 1.5rem;
-  z-index: 10;
+/* ── Shell de la pagina ─────────────────────────────────────────── */
+:host {
+  display: block;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(251, 191, 36, 0.14), transparent 40%),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.97));
+  color: var(--text-primary, #f9fafb);
+  font-family: 'Nunito', sans-serif;
+}
+
+.dex-page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.dex-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.95), rgba(2, 6, 23, 0.75));
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.dex-back {
   display: grid;
   place-items: center;
-  width: 3.2rem;
-  height: 3.2rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid var(--action, #f59e0b);
   background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(4px);
   color: var(--action, #f59e0b);
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   text-decoration: none;
-  cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, transform 140ms ease, box-shadow 140ms ease;
+  transition: background 160ms ease, color 160ms ease, transform 140ms ease;
 }
 
-.back-btn:hover {
+.dex-back:hover {
   background: var(--action, #f59e0b);
   color: #0b1120;
-  transform: scale(1.1);
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+  transform: scale(1.06);
 }
 
-.pokedex-layout {
-  position: relative;
-  width: min(80rem, 100%);
-  animation: cardReveal 520ms ease-out;
+.dex-titles {
+  min-width: 0;
 }
 
-.pokedex-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.pokedex-title {
+.dex-title {
   margin: 0;
   font-family: 'Bungee', sans-serif;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-size: clamp(1.3rem, 3.4vw, 1.9rem);
   letter-spacing: 0.04em;
+  line-height: 1.1;
 }
 
-.pokedex-subtitle {
-  margin: 0.4rem 0 0;
+.dex-subtitle {
+  margin: 0.2rem 0 0;
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
+.dex-count {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.1rem 0.55rem;
+  border-radius: 1rem;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+}
+
+.dex-search {
+  animation: cardReveal 420ms ease-out;
+}
+
+@media (max-width: 640px) {
+  .dex-page {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
+}
+
+/* ── Modal de detalle (se conserva) ─────────────────────────────────── */
 .pokedex-overlay {
   position: fixed;
   inset: 0;

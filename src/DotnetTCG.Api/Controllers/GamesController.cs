@@ -1,3 +1,4 @@
+using DotnetTCG.Api.Hubs;
 using DotnetTCG.Api.Infrastructure;
 using DotnetTCG.Application.Common.Interfaces;
 using DotnetTCG.Application.Games;
@@ -30,7 +31,9 @@ public sealed record GameActionTarget(string Zone, int Index);
 public sealed class GamesController(
     LobbyService lobby,
     GameExecutionService execution,
-    IGameLogRepository gameLogs) : ControllerBase
+    IGameLogRepository gameLogs,
+    GameConnectionTracker tracker,
+    TimeProvider clock) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<LobbyDto>> Create([FromBody] CreateGameRequest request, CancellationToken ct)
@@ -47,7 +50,13 @@ public sealed class GamesController(
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<LobbyDto>>> ListOpen(CancellationToken ct)
-        => Ok(await lobby.ListOpenAsync(ct));
+    {
+        // Mantenimiento oportunista: los lobbies abandonados se borran solos.
+        await lobby.CleanupStaleAsync(clock.GetUtcNow().AddHours(-24), ct);
+        var open = await lobby.ListOpenAsync(ct);
+        // Un lobby solo existe mientras su creador sigue conectado.
+        return Ok(open.Where(l => tracker.IsConnected(l.CreatorId)).ToList());
+    }
 
     [HttpGet("{id:guid}/lobby")]
     public async Task<ActionResult<LobbyDto>> GetLobby(Guid id, CancellationToken ct)

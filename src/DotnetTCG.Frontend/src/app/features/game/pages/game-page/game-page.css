@@ -666,3 +666,67 @@
   font-size: 0.85rem;
   color: rgb(241, 0, 0);
 }
+
+/* ── Media pantalla / angosto: todo visible sin scroll ─────────────────── */
+@media (max-width: 1100px) {
+  .game-area {
+    padding: 34px 8px 0;
+  }
+  .hand-row {
+    min-height: 150px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    gap: 0;
+  }
+  /* Mano solapada: entran 10+ cartas sin scroll horizontal */
+  .hand-row app-card + app-card {
+    margin-left: -52px;
+  }
+  .hand-row app-card:hover {
+    z-index: 5;
+  }
+  .field-divider {
+    height: 8px;
+    min-height: 8px;
+  }
+  .field-divider .pokeball {
+    width: 56px;
+    height: 56px;
+  }
+  .avatar-name {
+    display: none;
+  }
+  .float-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 760px) {
+  .hand-row {
+    min-height: 122px;
+  }
+  .hand-row app-card + app-card {
+    margin-left: -46px;
+  }
+  .field-half {
+    padding: 2px 4px;
+  }
+  .side-panel-container {
+    width: 300px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .stadium-card-img {
+    width: 56px;
+    height: 78px;
+  }
+  .stadium-label {
+    display: none;
+  }
+  .stadium-zone {
+    left: 30%;
+  }
+}

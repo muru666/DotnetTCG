@@ -157,6 +157,15 @@ import { PokemonInPlay } from '../../../../shared/models/dtos/game-state.model';
     .cond-asleep    { background: rgba(59, 130, 246, 0.3); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
     .cond-confused  { background: rgba(234, 179, 8, 0.3);  color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
     .cond-paralyzed { background: rgba(245, 158, 11, 0.3); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+    @media (max-width: 1100px) {
+      .active-card { width: 112px; }
+      .ac-name { font-size: 0.62rem; }
+      .ac-hp { font-size: 0.62rem; }
+    }
+    @media (max-width: 760px) {
+      .active-card { width: 92px; }
+      .ac-info { padding: 4px 5px; }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

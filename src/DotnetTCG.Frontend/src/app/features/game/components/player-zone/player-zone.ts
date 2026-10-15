@@ -244,6 +244,17 @@ const ACTIVATABLE_ABILITIES = new Set([
     @keyframes pulse-retreat { 0%, 100% { outline-color: rgba(245, 158, 11, 0.7); } 50% { outline-color: rgba(245, 158, 11, 0.25); } }
     .retreat-overlay { position: absolute; inset: 0; z-index: 10; cursor: pointer; border-radius: 4px; }
     .action-btn.btn-disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.5); }
+    @media (max-width: 1100px) {
+      .zone-body { gap: 6px; padding: 2px 4px; }
+      .zone-side { width: 44px; }
+      .zone-actions { width: 96px; }
+      .action-btn { font-size: 0.55rem; padding: 4px 5px; }
+      .pile-label { display: none; }
+    }
+    @media (max-width: 760px) {
+      .zone-side { width: 34px; }
+      .zone-actions { width: 84px; }
+    }
     .action-btn.btn-disabled:hover { background: rgba(255, 255, 255, 0.05); }
     .bench-ability-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .bench-ability-btn:disabled:hover { background: rgba(99, 102, 241, 0.15); }

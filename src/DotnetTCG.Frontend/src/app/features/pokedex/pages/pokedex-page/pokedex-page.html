@@ -1,19 +1,24 @@
-<main class="auth-page" [style.background-image]="backgroundImage()">
-  <a class="back-btn" routerLink="/main-menu" title="Volver al menú principal">&#8592;</a>
+<div class="dex-page">
+  <header class="dex-header">
+    <a class="dex-back" routerLink="/main-menu" title="Volver al menú principal">&#8592;</a>
+    <div class="dex-titles">
+      <h1 class="dex-title">Pokédex</h1>
+      <p class="dex-subtitle">
+        Explora todas las cartas disponibles
+        @if (totalCards() > 0) {
+          <span class="dex-count">{{ totalCards() }} cartas</span>
+        }
+      </p>
+    </div>
+  </header>
 
-  <div class="pokedex-layout pokedex-card">
-    <header class="pokedex-header">
-      <h1 class="pokedex-title">Pokédex</h1>
-      <p class="pokedex-subtitle">Explora todas las cartas disponibles</p>
-    </header>
-
+  <div class="dex-search">
     <app-card-search
-      paginationMode="simple"
       [showFilters]="true"
       (cardClick)="openCard($event)"
     />
   </div>
-</main>
+</div>
 
 @if (selectedCard(); as card) {
   <div class="pokedex-overlay" (click)="closeCard()">

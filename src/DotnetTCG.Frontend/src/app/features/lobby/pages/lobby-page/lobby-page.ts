@@ -125,7 +125,8 @@ export class GameSearcherComponent implements OnInit, OnDestroy {
       return;
     }
     if (game.players.length >= 2) {
-      this.error.set('La partida está llena');
+      // Lleno para jugar: se entra como espectador.
+      this.router.navigate(['/lobby', game.gameId], { state: { spectator: true } });
       return;
     }
     if (game.isPublic === false) {

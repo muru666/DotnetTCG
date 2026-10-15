@@ -120,7 +120,7 @@ export class DeckBuilderService {
   currentPage = signal<number>(0);
   totalPages = signal<number>(0);
   totalElements = signal<number>(0);
-  searchSize = 20;
+  searchSize = 12;
   lastSearchQuery = signal('');
   lastSearchTipo = signal<string | undefined>(undefined);
   isLoading = signal<boolean>(false);

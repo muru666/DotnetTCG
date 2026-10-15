@@ -21,19 +21,10 @@
       }
 
       <app-card-search
-        paginationMode="simple"
         [showFilters]="true"
+        [selectedId]="selectedCard()?.id ?? null"
         (cardClick)="selectCard($event)"
-      >
-        <ng-template #cardCard let-card let-first="first">
-          <div class="db-card-item" [class.selected]="selectedCard()?.id === card.id"
-               (click)="selectCard(card)">
-            <img [ngSrc]="card.imageUrl" [alt]="card.nombre" class="db-card-image" width="60" height="84" [priority]="first" />
-            <span class="db-card-name">{{ card.nombre }}</span>
-            <span class="db-card-type" [class]="'type-' + card.tipo">{{ card.tipo }}</span>
-          </div>
-        </ng-template>
-      </app-card-search>
+      />
 
       @if (selectedCard(); as sel) {
         <div class="db-add-panel">

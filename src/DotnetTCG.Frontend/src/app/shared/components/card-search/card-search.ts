@@ -1,16 +1,18 @@
 import {
-  ChangeDetectionStrategy, Component, ContentChild, inject, input, model,
-  OnDestroy, OnInit, output, signal, TemplateRef
+  ChangeDetectionStrategy, Component, inject, input, model,
+  OnDestroy, OnInit, output, signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgTemplateOutlet, NgOptimizedImage } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { DeckBuilderService, Card } from '../../services/api/deck-builder.service';
+import { CardTileComponent } from '../card-tile/card-tile';
+
+const FILTER_TYPES = ['POKEMON', 'ENERGY', 'TRAINER'] as const;
 
 @Component({
   selector: 'app-card-search',
   standalone: true,
-  imports: [FormsModule, NgTemplateOutlet, NgOptimizedImage],
+  imports: [FormsModule, CardTileComponent],
   templateUrl: './card-search.html',
   styleUrl: './card-search.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,18 +20,16 @@ import { DeckBuilderService, Card } from '../../services/api/deck-builder.servic
 })
 export class CardSearchComponent implements OnInit, OnDestroy {
   private readonly deckBuilderService = inject(DeckBuilderService);
-  private hasLoadedOnce = false;
   private searchSubscription: Subscription | null = null;
 
-  paginationMode = input<'full' | 'simple'>('full');
   showFilters = input<boolean>(true);
   tipoFilter = model<string>('');
+  /** Resalta la carta con este id (p. ej. la seleccionada en el builder). */
+  selectedId = input<string | null>(null);
 
   readonly cardClick = output<Card>();
 
-  @ContentChild('cardCard', { read: TemplateRef })
-  protected cardCardTemplate?: TemplateRef<{ $implicit: Card; first?: boolean }>;
-
+  protected readonly filterTypes: readonly string[] = FILTER_TYPES;
   protected results = signal<Card[]>([]);
   protected isLoading = signal(false);
   protected currentPage = signal(0);
@@ -57,8 +57,13 @@ export class CardSearchComponent implements OnInit, OnDestroy {
     this.loadPage(page);
   }
 
+  protected typeLabel(tipo: string): string {
+    return tipo === 'POKEMON' ? 'Pokémon' : tipo === 'ENERGY' ? 'Energía' : 'Entrenador';
+  }
+
   private loadPage(page: number): void {
-    // Cancelar request anterior (para búsquedas por nombre)
+    // Cancelar request anterior (para búsquedas por nombre).
+    // Los resultados vigentes se mantienen visibles hasta que llegan los nuevos.
     this.searchSubscription?.unsubscribe();
 
     this.isLoading.set(true);
@@ -85,32 +90,9 @@ export class CardSearchComponent implements OnInit, OnDestroy {
     this.totalPages.set(this.deckBuilderService.totalPages());
     this.totalElements.set(this.deckBuilderService.totalElements());
     this.isLoading.set(false);
-    if (!this.hasLoadedOnce) {
-      this.hasLoadedOnce = true;
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   protected onCardClick(card: Card): void {
     this.cardClick.emit(card);
-  }
-
-  protected getPaginationPages(): (number | null)[] {
-    const total = this.totalPages();
-    const current = this.currentPage();
-    if (total <= 1) return [];
-
-    const pages = new Set<number>();
-    pages.add(0);
-    pages.add(total - 1);
-    for (let i = Math.max(0, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.add(i);
-
-    const sorted = [...pages].sort((a, b) => a - b);
-    const result: (number | null)[] = [];
-    for (let i = 0; i < sorted.length; i++) {
-      if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push(null);
-      result.push(sorted[i]);
-    }
-    return result;
   }
 }

@@ -102,6 +102,14 @@ import { Card } from '../../../../shared/models/dtos/game-state.model';
       transform: none;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
+    @media (max-width: 1100px) {
+      .card-wrapper { width: 96px; height: 134px; }
+      .card-name { font-size: 0.58rem; }
+    }
+    @media (max-width: 760px) {
+      .card-wrapper { width: 78px; height: 109px; }
+      .card-name { display: none; }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
