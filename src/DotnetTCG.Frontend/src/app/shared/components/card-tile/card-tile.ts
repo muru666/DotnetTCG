@@ -78,10 +78,13 @@ const TYPE_LABEL: Record<Card['tipo'], string> = {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.3rem;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+      min-width: 0;
     }
     .tile-badge {
-      font-size: 0.62rem;
+      font-size: 0.58rem;
+      white-space: nowrap;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.4px;
@@ -93,7 +96,8 @@ const TYPE_LABEL: Record<Card['tipo'], string> = {
     .tile--energy .tile-badge { background: rgba(34, 197, 94, 0.22); color: #86efac; }
     .tile--trainer .tile-badge { background: rgba(168, 85, 247, 0.25); color: #d8b4fe; }
     .tile-hp {
-      font-size: 0.68rem;
+      font-size: 0.64rem;
+      white-space: nowrap;
       font-weight: 700;
       color: #f87171;
       font-family: 'Nunito', sans-serif;

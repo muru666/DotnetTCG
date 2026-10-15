@@ -75,27 +75,29 @@
   display: grid;
   gap: 0.6rem;
   margin-bottom: 0.9rem;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  /* Columnas fijas por breakpoint (12 cartas = 2/3/4 filas exactas) y tiles
+     con tope: la grilla se ve igual en completa y en media. */
+  grid-template-columns: repeat(6, minmax(0, 150px));
+  justify-content: center;
   align-content: start;
-}
-
-.cs-grid {
   /* Altura fija: no se adapta a la cantidad de cartas; si sobran, scroll interno.
      La barra de paginado queda siempre en el mismo lugar. */
-  height: 30rem;
+  height: 35rem;
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
   .cs-grid {
-    height: 33rem;
+    grid-template-columns: repeat(4, minmax(0, 150px));
+    height: 53rem;
   }
 }
 
 @media (max-width: 760px) {
   .cs-grid {
-    height: 35rem;
+    grid-template-columns: repeat(3, minmax(0, 150px));
+    height: 71rem;
   }
 }
 
