@@ -77,10 +77,10 @@ public sealed class ValidatorTests
     {
         var validator = new SearchCardsValidator();
 
-        Assert.False(validator.TestValidate(new SearchCardsQuery(null, null, -1, 10)).IsValid);
-        Assert.False(validator.TestValidate(new SearchCardsQuery(null, null, 0, 0)).IsValid);
-        Assert.False(validator.TestValidate(new SearchCardsQuery(null, null, 0, 101)).IsValid);
-        Assert.True(validator.TestValidate(new SearchCardsQuery(null, null, 0, 100)).IsValid);
+        Assert.False(validator.TestValidate(new SearchCardsQuery(null, null, null, -1, 10)).IsValid);
+        Assert.False(validator.TestValidate(new SearchCardsQuery(null, null, null, 0, 0)).IsValid);
+        Assert.False(validator.TestValidate(new SearchCardsQuery(null, null, null, 0, 101)).IsValid);
+        Assert.True(validator.TestValidate(new SearchCardsQuery(null, null, null, 0, 100)).IsValid);
     }
 
     [Fact]

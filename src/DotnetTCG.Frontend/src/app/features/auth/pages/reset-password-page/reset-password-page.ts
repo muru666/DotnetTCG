@@ -30,6 +30,7 @@ export class ResetPasswordPageComponent implements OnInit {
   private readonly backgroundImageService = inject(BackgroundImageService);
 
   protected readonly backgroundImage = signal(this.backgroundImageService.getAuthBackgroundImage());
+  protected readonly tokenInput = signal('');
   protected readonly isSubmitting = signal(false);
   protected readonly isTokenValid = signal(false);
   protected readonly requestError = signal<string | null>(null);
@@ -47,14 +48,22 @@ export class ResetPasswordPageComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    // El email trae el codigo crudo: se acepta por ?token= o pegado a mano.
     const token = this.route.snapshot.queryParamMap.get('token');
-
-    if (!token) {
-      this.requestError.set('El enlace de recuperacion no es valido o esta incompleto.');
-      this.isTokenValid.set(false);
-      return;
+    if (token) {
+      this.tokenInput.set(token);
+      this.validateToken(token);
     }
+  }
 
+  protected validateTokenInput(): void {
+    const token = this.tokenInput().trim();
+    if (!token) return;
+    this.validateToken(token);
+  }
+
+  private validateToken(token: string): void {
+    this.requestError.set(null);
     this.recoveryToken = token;
     this.authService.validateRecoveryToken(token).subscribe({
       next: () => {

@@ -37,7 +37,7 @@ public sealed class DeckService(
             if ((await decks.ListByOwnerAsync(ownerId, cancellationToken)).Count > 0)
                 return null;
 
-            var catalog = await cards.SearchAsync(null, null, 0, 500, cancellationToken);
+            var catalog = await cards.SearchAsync(null, null, null, 0, 500, cancellationToken);
             var pokemon = catalog
                 .OfType<PokemonCard>()
                 .Where(c => c.IsBasic)

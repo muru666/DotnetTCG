@@ -39,14 +39,6 @@ export class SpectatorPageComponent implements OnInit, OnDestroy {
     return (id && this.playerNamesById().get(id)) || 'Jugador 2';
   });
 
-  protected readonly playerChatMessages = computed<ChatMessage[]>(() => {
-    const names = this.playerNamesById();
-    return this.gameService.chatMessages().map(msg => ({
-      ...msg,
-      senderName: names.get(msg.senderId) ?? msg.senderName
-    }));
-  });
-
   protected readonly isGameOver = computed(() => this.gameService.gameState()?.status === 'FINISHED');
 
   protected readonly winnerName = computed(() => {
@@ -68,7 +60,7 @@ export class SpectatorPageComponent implements OnInit, OnDestroy {
       error: () => {}
     });
 
-    this.gameService.loadGame(gameId).subscribe({
+    this.gameService.loadSpectatorGame(gameId).subscribe({
       error: () => this.loadingError.set(true)
     });
 

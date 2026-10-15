@@ -56,6 +56,23 @@ public sealed class SmallEndpointTests
     }
 
     [Fact]
+    public async Task Cards_SupertypeFilter_200OnlyMatching()
+    {
+        if (!await DbAsync())
+            return;
+        var client = await RegisterAsync();
+
+        var response = await client.GetAsync("/v1/cards?supertype=Trainer&pageSize=100");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("\"supertype\":\"Pokemon\"", body);
+        Assert.Contains("\"supertype\":\"Trainer\"", body);
+
+        var bad = await client.GetAsync("/v1/cards?supertype=NotASupertype");
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+    }
+
+    [Fact]
     public async Task Cards_EmptySearch_200EmptyPage()
     {
         if (!await DbAsync())

@@ -91,7 +91,6 @@
                   }
                   <span class="lobby-badge badge--status">{{ game.status }}</span>
                 </div>
-                <span class="lobby-game-meta">{{ game.createdAt | date:'short' }}</span>
               </div>
               <button class="auth-btn lobby-join-btn" type="button" (click)="joinGame(game)">
                 @if (activeFilter() === 'espectar') {
@@ -129,7 +128,6 @@
                 <div class="lobby-game-badges">
                   <span class="lobby-badge badge--status">{{ game.status }}</span>
                 </div>
-                <span class="lobby-game-meta">Creada el {{ game.createdAt | date:'short' }}</span>
               </div>
               <button class="auth-btn lobby-join-btn" type="button" (click)="resumeGame(game)">
                 Cargar

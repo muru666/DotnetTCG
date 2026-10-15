@@ -42,7 +42,7 @@
                 }
               </span>
               @if (player.hasDeck) {
-                <span class="gl-deck-name">{{ player.deckName }}</span>
+                <span class="gl-deck-name">{{ player.deckName ?? 'Mazo seleccionado' }}</span>
               } @else {
                 <span class="gl-no-deck">Sin mazo seleccionado</span>
               }

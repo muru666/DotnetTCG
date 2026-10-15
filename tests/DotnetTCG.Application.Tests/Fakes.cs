@@ -20,17 +20,20 @@ internal sealed class FakeCardRepository(Dictionary<string, Card>? cards = null)
             ids.Distinct().Where(_cards.ContainsKey).ToDictionary(id => id, id => _cards[id]));
 
     public Task<IReadOnlyList<Card>> SearchAsync(
-        string? name, PokemonType? type, int page, int pageSize, CancellationToken cancellationToken)
+        string? name, PokemonType? type, SuperType? supertype,
+        int page, int pageSize, CancellationToken cancellationToken)
     {
         var query = _cards.Values.AsEnumerable();
         if (!string.IsNullOrWhiteSpace(name))
             query = query.Where(c => c.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
+        if (supertype is not null)
+            query = query.Where(c => c.Supertype == supertype.Value);
         return Task.FromResult<IReadOnlyList<Card>>(
             query.Skip(page * pageSize).Take(pageSize).ToList());
     }
 
-    public Task<int> CountAsync(string? name, PokemonType? type, CancellationToken cancellationToken)
-        => Task.FromResult(_cards.Count);
+    public Task<int> CountAsync(string? name, PokemonType? type, SuperType? supertype, CancellationToken cancellationToken)
+        => Task.FromResult(_cards.Values.Count(c => supertype is null || c.Supertype == supertype.Value));
 
     public Task UpsertRangeAsync(IEnumerable<Card> cards, CancellationToken cancellationToken)
     {

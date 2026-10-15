@@ -103,11 +103,6 @@ export class SidePanelComponent {
 
   readonly sendMessage = output<ChatMessage>();
   readonly toggle = output<boolean>();
-  readonly tabChange = output<'chat' | 'history'>();
-
-  protected switchTab(tab: 'chat' | 'history'): void {
-    this.tabChange.emit(tab);
-  }
 
   protected onSendMessage(msg: ChatMessage): void {
     this.sendMessage.emit(msg);

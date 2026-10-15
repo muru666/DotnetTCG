@@ -40,7 +40,7 @@ public sealed class AbilityRegistry
                         ?? ctx.State.OpponentOf(ctx.ActingPlayerIndex).Active;
                     target?.AddDamage(30);
                 }),
-            ["Upside-Down"] = new AbilityBehavior(
+            ["Upside-Down Evolution"] = new AbilityBehavior(
                 Custom: static (ctx, _) =>
                 {
                     if (!ctx.User.HasStatus(Status.Confused))

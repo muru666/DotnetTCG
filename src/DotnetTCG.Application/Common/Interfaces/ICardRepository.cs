@@ -9,8 +9,9 @@ public interface ICardRepository
     Task<IReadOnlyDictionary<string, Card>> GetByIdsAsync(
         IEnumerable<string> ids, CancellationToken cancellationToken);
     Task<IReadOnlyList<Card>> SearchAsync(
-        string? name, PokemonType? type, int page, int pageSize, CancellationToken cancellationToken);
-    Task<int> CountAsync(string? name, PokemonType? type, CancellationToken cancellationToken);
+        string? name, PokemonType? type, SuperType? supertype,
+        int page, int pageSize, CancellationToken cancellationToken);
+    Task<int> CountAsync(string? name, PokemonType? type, SuperType? supertype, CancellationToken cancellationToken);
     Task UpsertRangeAsync(IEnumerable<Card> cards, CancellationToken cancellationToken);
     Task<int> CountBySetAsync(string setId, CancellationToken cancellationToken);
 }

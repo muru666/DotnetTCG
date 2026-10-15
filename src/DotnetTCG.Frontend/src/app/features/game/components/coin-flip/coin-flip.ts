@@ -27,9 +27,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal, On
             @if (setup()) {
               <p class="result-subtitle">{{ resultSubtitle() }}</p>
             }
-            @if (flipSubtitle(); as sub) {
-              <p class="flip-subtitle">{{ sub }}</p>
-            }
           </div>
         }
 
@@ -180,13 +177,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal, On
       margin: 8px 0 0;
     }
 
-    .flip-subtitle {
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.4);
-      margin: 4px 0 0;
-    }
-
 
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -197,19 +187,13 @@ export class CoinFlipComponent implements OnInit, OnDestroy {
   readonly setup = input(false);
   readonly playerName = input('');
   readonly opponentName = input('');
-  readonly results = input<string[]>([]);
 
   readonly dismiss = output<void>();
 
-  protected readonly currentIndex = signal(0);
   protected readonly isFlipping = signal(true);
   protected readonly showResult = signal(false);
-  protected readonly showSummary = signal(false);
 
-  protected readonly isHeads = computed(() => {
-    const r = this.results();
-    return r.length > 0 ? r[this.currentIndex()] === 'HEADS' : this.result() === 'HEADS';
-  });
+  protected readonly isHeads = computed(() => this.result() === 'HEADS');
 
   protected readonly displayLabel = computed(() => {
     if (this.setup()) {
@@ -222,20 +206,7 @@ export class CoinFlipComponent implements OnInit, OnDestroy {
     if (this.setup()) {
       return this.isHeads() ? '¡EMPIEZAS TÚ!' : 'Empieza el oponente';
     }
-    const res = this.results();
-    if (res.length > 1 && this.showSummary()) {
-      const headsCount = res.filter(r => r === 'HEADS').length;
-      return headsCount > 0 ? `${headsCount} de ${res.length} CARAS` : `${res.length - headsCount} de ${res.length} CRUZ`;
-    }
-    return this.isHeads() ? 'HEADS' : 'TAILS';
-  });
-
-  protected readonly flipSubtitle = computed(() => {
-    const res = this.results();
-    if (res.length > 1 && !this.showSummary()) {
-      return `${this.currentIndex() + 1} de ${res.length}`;
-    }
-    return '';
+    return this.isHeads() ? 'CARA' : 'CRUZ';
   });
 
   protected readonly resultSubtitle = computed(() => {
@@ -248,58 +219,22 @@ export class CoinFlipComponent implements OnInit, OnDestroy {
   });
 
   private spinTimer: ReturnType<typeof setTimeout> | null = null;
-  private resultTimer: ReturnType<typeof setTimeout> | null = null;
   private autoDismissTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor() {
-  }
-
   ngOnInit(): void {
-    const res = this.results();
-    if (res.length > 1) {
-      this.startSequentialFlip(0);
-    } else {
-      const flipDuration = 1200 + Math.random() * 600;
-      this.spinTimer = setTimeout(() => {
-        this.isFlipping.set(false);
-        this.showResult.set(true);
-
-        this.autoDismissTimer = setTimeout(() => {
-          this.dismiss.emit();
-        }, 2000);
-      }, flipDuration);
-    }
-  }
-
-  private startSequentialFlip(index: number): void {
-    this.currentIndex.set(index);
-    this.isFlipping.set(true);
-    this.showResult.set(false);
-
+    const flipDuration = 1200 + Math.random() * 600;
     this.spinTimer = setTimeout(() => {
       this.isFlipping.set(false);
       this.showResult.set(true);
 
-      const res = this.results();
-      const next = index + 1;
-      if (next < res.length) {
-        this.resultTimer = setTimeout(() => {
-          this.startSequentialFlip(next);
-        }, 800);
-      } else {
-        this.resultTimer = setTimeout(() => {
-          this.showSummary.set(true);
-          this.autoDismissTimer = setTimeout(() => {
-            this.dismiss.emit();
-          }, 2000);
-        }, 800);
-      }
-    }, 1500);
+      this.autoDismissTimer = setTimeout(() => {
+        this.dismiss.emit();
+      }, 2000);
+    }, flipDuration);
   }
 
   ngOnDestroy(): void {
     if (this.spinTimer) clearTimeout(this.spinTimer);
-    if (this.resultTimer) clearTimeout(this.resultTimer);
     if (this.autoDismissTimer) clearTimeout(this.autoDismissTimer);
   }
 
@@ -307,7 +242,6 @@ export class CoinFlipComponent implements OnInit, OnDestroy {
     if (this.showResult()) {
       if (this.autoDismissTimer) { clearTimeout(this.autoDismissTimer); this.autoDismissTimer = null; }
       if (this.spinTimer) { clearTimeout(this.spinTimer); this.spinTimer = null; }
-      if (this.resultTimer) { clearTimeout(this.resultTimer); this.resultTimer = null; }
       this.dismiss.emit();
     }
   }

@@ -7,7 +7,7 @@ public sealed record CreateDeckRequest(string Name);
 public sealed record RenameDeckRequest(string Name);
 public sealed record AddCardRequest(string CardId, int Quantity);
 public sealed record SetQuantityRequest(int Quantity);
-public sealed record SearchCardsQuery(string? Name, string? Type, int Page, int PageSize);
+public sealed record SearchCardsQuery(string? Name, string? Type, string? Supertype, int Page, int PageSize);
 
 public sealed class CreateDeckValidator : AbstractValidator<CreateDeckRequest>
 {

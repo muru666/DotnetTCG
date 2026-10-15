@@ -1,8 +1,9 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, forkJoin, of, EMPTY } from 'rxjs';
+import { Observable, forkJoin, of, EMPTY } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
+import { extractHttpError } from '../../utils/http-error';
 
 export interface Attack {
   name: string;
@@ -68,12 +69,9 @@ export interface Deck {
   deckCards: DeckCard[];
 }
 
-export interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
+interface BackendDeckOp {
+  cardId: string;
+  quantity: number;
 }
 
 interface BackendCardDto {
@@ -89,8 +87,8 @@ interface BackendCardDto {
   pokemonType?: string | null;
   attacks?: { name: string; description: string; damage: string; cost: string[] }[];
   abilities?: { name: string; text: string; type: string }[];
-  weaknesses?: { type: string; value: string }[];
-  resistances?: { type: string; value: string }[];
+  weaknesses?: { type: string; multiplier: string }[];
+  resistances?: { type: string; reduction: string }[];
   energyType?: string | null;
   specialEnergy?: string | null;
   trainerSubtype?: string | null;
@@ -136,13 +134,11 @@ export class DeckBuilderService {
   remainingSlots = computed(() => Math.max(0, 60 - this.totalCards()));
   canAddMore = computed(() => this.remainingSlots() > 0);
   deckCards = computed(() =>
-    (this.currentDeck()?.deckCards ?? []).sort((a, b) =>
+    [...(this.currentDeck()?.deckCards ?? [])].sort((a, b) =>
       a.card.nombre.localeCompare(b.card.nombre)
     )
   );
 
-  private currentDeckSubject = new BehaviorSubject<Deck | null>(null);
-  public currentDeck$ = this.currentDeckSubject.asObservable();
   private successTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly cardCache = new Map<string, Card>();
 
@@ -152,12 +148,7 @@ export class DeckBuilderService {
     this.successTimer = setTimeout(() => this.successMessage.set(null), 2500);
   }
 
-  constructor(private http: HttpClient) {
-    effect(() => {
-      this.currentDeckSubject.next(this.currentDeck());
-    });
-  }
-
+  constructor(private http: HttpClient) {}
   /** Resetear el estado de búsqueda al salir de Pokédex/DeckBuilder */
   resetSearchState(): void {
     this.currentPage.set(0);
@@ -181,7 +172,7 @@ export class DeckBuilderService {
       url += `&name=${encodeURIComponent(query)}`;
     }
     if (tipo) {
-      url += `&type=${encodeURIComponent(tipo)}`;
+      url += `&supertype=${encodeURIComponent(tipo)}`;
     }
     return this.http.get<{ items: BackendCardDto[]; total: number; page: number; pageSize: number }>(url).pipe(
       tap(resp => {
@@ -224,26 +215,28 @@ export class DeckBuilderService {
         this.isLoading.set(false);
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al cargar mazos');
+        this.error.set(extractHttpError(err, 'Error al cargar mazos'));
         this.isLoading.set(false);
         return of([]);
       })
     );
   }
 
-  createDeck(name: string, cards?: SaveDeckCard[]): Observable<Deck> {
+  createDeck(name: string, cards: SaveDeckCard[] = []): Observable<Deck> {
     this.isLoading.set(true);
     this.error.set(null);
 
     return this.http.post<BackendDeck>(`${this.apiUrl}/v1/decks`, { name }).pipe(
+      switchMap(deck => this.syncDeckCards(deck.id, cards)),
       switchMap(deck => this.enrichDeck(deck)),
       tap(deck => {
         this.currentDeck.set(deck);
         this.userDecks.update(decks => [...decks, deck]);
         this.isLoading.set(false);
+        this.showSuccess('Mazo creado');
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al crear mazo');
+        this.error.set(extractHttpError(err, 'Error al crear mazo'));
         this.isLoading.set(false);
         return of(null as unknown as Deck);
       })
@@ -261,7 +254,7 @@ export class DeckBuilderService {
         this.isLoading.set(false);
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al cargar mazo');
+        this.error.set(extractHttpError(err, 'Error al cargar mazo'));
         this.isLoading.set(false);
         return of(null as unknown as Deck);
       })
@@ -277,7 +270,7 @@ export class DeckBuilderService {
         this.currentDeck.set(deck);
       }),
       catchError(err => {
-        const msg = err.error?.message || 'Error al agregar carta';
+        const msg = extractHttpError(err, 'Error al agregar carta');
         this.error.set(msg);
         return of(null as unknown as Deck);
       })
@@ -293,7 +286,7 @@ export class DeckBuilderService {
         this.currentDeck.set(deck);
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al quitar carta');
+        this.error.set(extractHttpError(err, 'Error al quitar carta'));
         return of(null as unknown as Deck);
       })
     );
@@ -308,16 +301,17 @@ export class DeckBuilderService {
         this.currentDeck.set(deck);
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al actualizar cantidad');
+        this.error.set(extractHttpError(err, 'Error al actualizar cantidad'));
         return of(null as unknown as Deck);
       })
     );
   }
 
-  saveDeck(deckId: string, name: string, cards?: SaveDeckCard[]): Observable<Deck> {
+  saveDeck(deckId: string, name: string, cards: SaveDeckCard[] = []): Observable<Deck> {
     this.error.set(null);
 
     return this.http.put<BackendDeck>(`${this.apiUrl}/v1/decks/${deckId}`, { name }).pipe(
+      switchMap(() => this.syncDeckCards(deckId, cards)),
       switchMap(deck => this.enrichDeck(deck)),
       tap(deck => {
         this.currentDeck.set(deck);
@@ -325,7 +319,7 @@ export class DeckBuilderService {
         this.showSuccess('Mazo guardado');
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al guardar mazo');
+        this.error.set(extractHttpError(err, 'Error al guardar mazo'));
         return of(null as unknown as Deck);
       })
     );
@@ -341,8 +335,37 @@ export class DeckBuilderService {
         this.error.set(null);
       }),
       catchError(err => {
-        this.error.set(err.error?.message || 'Error al eliminar mazo');
+        this.error.set(extractHttpError(err, 'Error al eliminar mazo'));
         return EMPTY;
+      })
+    );
+  }
+
+  /**
+   * Lleva las cartas del servidor al estado del borrador: altas, cambios de
+   * cantidad y bajas. Devuelve el mazo fresco del servidor.
+   */
+  private syncDeckCards(deckId: string, cards: SaveDeckCard[]): Observable<BackendDeck> {
+    const base = `${this.apiUrl}/v1/decks/${deckId}`;
+    return this.http.get<BackendDeck>(base).pipe(
+      switchMap(server => {
+        const serverQty = new Map(server.cards.map(c => [c.cardId, c.quantity] as const));
+        const draftQty = new Map(cards.map(c => [c.cardId, c.quantity] as const));
+        const ops: Observable<unknown>[] = [];
+        for (const [cardId, quantity] of draftQty) {
+          if (!serverQty.has(cardId)) {
+            ops.push(this.http.post(`${base}/cards`, { cardId, quantity }));
+          } else if (serverQty.get(cardId) !== quantity) {
+            ops.push(this.http.put(`${base}/cards/${cardId}`, { quantity }));
+          }
+        }
+        for (const cardId of serverQty.keys()) {
+          if (!draftQty.has(cardId)) {
+            ops.push(this.http.delete(`${base}/cards/${cardId}`));
+          }
+        }
+        if (ops.length === 0) return of(server);
+        return forkJoin(ops).pipe(switchMap(() => this.http.get<BackendDeck>(base)));
       })
     );
   }
@@ -423,8 +446,14 @@ export class DeckBuilderService {
         description: a.text,
         type: a.type?.toUpperCase(),
       })),
-      weaknesses: [],
-      resistances: [],
+      weaknesses: (dto.weaknesses ?? []).map(w => ({
+        type: w.type?.toUpperCase(),
+        value: w.multiplier,
+      })),
+      resistances: (dto.resistances ?? []).map(r => ({
+        type: r.type?.toUpperCase(),
+        value: r.reduction,
+      })),
     };
     this.cardCache.set(card.id, card);
     return card;

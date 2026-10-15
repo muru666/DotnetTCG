@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output, computed, signal } from '@angular/core';
 
-import { CdkDropListGroup, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDropListGroup, CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { GameState, Card, PokemonInPlay } from '../../../../shared/models/dtos/game-state.model';
 import { CardComponent } from '../card/card';
 import { CardSlotComponent } from '../card-slot/card-slot';
@@ -17,7 +17,7 @@ import { CardSlotComponent } from '../card-slot/card-slot';
           <p class="setup-waiting-text">El otro jugador está colocando sus Pokémon</p>
         </div>
       }
-      @if (mulliganCount() > 0 && !mulliganDismissed()) {
+      @if (showMulligan()) {
         <div class="setup-mulligan-overlay" (click)="dismissMulligan()">
           <div class="setup-mulligan-card">
             <span class="setup-mulligan-icon">♻️</span>
@@ -51,7 +51,7 @@ import { CardSlotComponent } from '../card-slot/card-slot';
                 [draggable]="isMyTurn() && isBasicCard(card)"
                 [class.card-disabled]="!isMyTurn() || !isBasicCard(card)"
                 [class.clicked-card]="selectedCardId() === card.id"
-                (clicked)="isMyTurn() ? onCardClick(card) : null"
+                (clicked)="onCardClick(card)"
               />
             }
           </div>
@@ -97,7 +97,7 @@ import { CardSlotComponent } from '../card-slot/card-slot';
           <button
             class="setup-confirm-btn"
             [disabled]="!activePlaced() || !isMyTurn()"
-            (click)="isMyTurn() ? confirm.emit() : null"
+            (click)="onConfirm()"
           >
             @if (!isMyTurn()) {
               Esperando al oponente...
@@ -387,19 +387,11 @@ export class SetupPhaseComponent {
   readonly confirm = output<void>();
 
   protected readonly selectedCardId = signal<string | null>(null);
-  protected readonly mulliganDismissed = signal(false);
+  private readonly mulliganDismissedAt = signal(-1);
 
   protected readonly handCards = computed(() => {
     const hand = this.gameState()?.myBoard?.hand;
-    return Array.isArray(hand) ? hand as Card[] : [];
-  });
-
-  protected readonly handCardStates = computed(() => {
-    const hand = this.handCards();
-    return hand.map(card => ({
-      card,
-      isBasic: card.subtypes?.includes('BASIC') ?? false
-    }));
+    return Array.isArray(hand) ? hand : [];
   });
 
   protected readonly benchCards = computed(() => {
@@ -414,7 +406,12 @@ export class SetupPhaseComponent {
 
   protected readonly mulliganCount = computed(() => {
     const counts = this.gameState()?.mulliganCounts;
-    return counts ? counts[this.playerIndex()] : 0;
+    return counts ? counts[this.playerIndex()] ?? 0 : 0;
+  });
+
+  protected readonly showMulligan = computed(() => {
+    const count = this.mulliganCount();
+    return count > 0 && this.mulliganDismissedAt() < count;
   });
 
   protected readonly isMyTurn = computed(() => {
@@ -426,11 +423,11 @@ export class SetupPhaseComponent {
   }
 
   protected dismissMulligan(): void {
-    this.mulliganDismissed.set(true);
+    this.mulliganDismissedAt.set(this.mulliganCount());
   }
 
   protected onCardClick(card: Card): void {
-    if (!this.isBasicCard(card)) return;
+    if (!this.isMyTurn() || !this.isBasicCard(card)) return;
     this.selectedCardId.set(card.id);
     if (!this.activePlaced()) {
       this.cardDropped.emit({ cardId: card.id, targetSlot: 'active-setup' });
@@ -444,7 +441,13 @@ export class SetupPhaseComponent {
     this.cardDropped.emit({ cardId: event.cardId, targetSlot: event.slotId });
   }
 
-  protected onHandDrop(event: any): void {
-    // no-op: prevent dropping cards back into hand
+  protected onHandDrop(event: CdkDragDrop<string>): void {
+    // Intencionalmente vacio: las cartas no vuelven a la mano por arrastre.
+    void event;
+  }
+
+  protected onConfirm(): void {
+    if (!this.isMyTurn()) return;
+    this.confirm.emit();
   }
 }

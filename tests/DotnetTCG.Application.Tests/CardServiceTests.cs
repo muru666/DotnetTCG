@@ -19,7 +19,7 @@ public sealed class CardServiceTests
     {
         var service = new CardService(new FakeCardRepository(TestCardFactory.Catalog()), new FakePokeApiClient([]));
 
-        var result = await service.SearchAsync(null, null, -1, 500, CancellationToken.None);
+        var result = await service.SearchAsync(null, null, null, -1, 500, CancellationToken.None);
 
         Assert.Equal(0, result.Page);
         Assert.Equal(CardService.MaxPageSize, result.PageSize);

@@ -95,7 +95,7 @@ public sealed class EfRepositoryTests
         await repo.UpsertRangeAsync([card with { Hp = 190 }], CancellationToken.None);
 
         var found = await repo.GetByIdAsync("zset-1", CancellationToken.None);
-        var searched = await repo.SearchAsync("zvenu", null, 0, 20, CancellationToken.None);
+        var searched = await repo.SearchAsync("zvenu", null, null, 0, 20, CancellationToken.None);
 
         Assert.IsType<PokemonCard>(found);
         Assert.Equal(190, ((PokemonCard)found!).Hp);
@@ -116,14 +116,22 @@ public sealed class EfRepositoryTests
             new EnergyCard("zset-e", "Zwater Energy", [], [], "zset", "", PokemonType.Water, null),
         ], CancellationToken.None);
 
-        var fire = await repo.SearchAsync("zfire", PokemonType.Fire, 0, 10, CancellationToken.None);
-        var water = await repo.SearchAsync("zwater", PokemonType.Water, 0, 10, CancellationToken.None);
-        var missing = await repo.SearchAsync("zzz", null, 0, 10, CancellationToken.None);
+        var fire = await repo.SearchAsync("zfire", PokemonType.Fire, null, 0, 10, CancellationToken.None);
+        var water = await repo.SearchAsync("zwater", PokemonType.Water, null, 0, 10, CancellationToken.None);
+        var missing = await repo.SearchAsync("zzz", null, null, 0, 10, CancellationToken.None);
+        var onlyPokemon = await repo.SearchAsync("zfire", null, SuperType.Pokemon, 0, 10, CancellationToken.None);
+        var energyExcluded = await repo.SearchAsync("zwater", null, SuperType.Pokemon, 0, 10, CancellationToken.None);
+        var onlyEnergy = await repo.SearchAsync("zwater", null, SuperType.Energy, 0, 10, CancellationToken.None);
+        var energyCount = await repo.CountAsync(null, null, SuperType.Energy, CancellationToken.None);
 
         Assert.Single(fire);
         Assert.Single(water);
         Assert.Empty(missing);
-        Assert.True(await repo.CountAsync(null, null, CancellationToken.None) >= 2);
+        Assert.Single(onlyPokemon);
+        Assert.Empty(energyExcluded);
+        Assert.Single(onlyEnergy);
+        Assert.True(energyCount >= 1);
+        Assert.True(await repo.CountAsync(null, null, null, CancellationToken.None) >= 2);
     }
 
     [Fact]

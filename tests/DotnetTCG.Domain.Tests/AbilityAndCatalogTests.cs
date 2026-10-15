@@ -93,7 +93,7 @@ public sealed class AbilityAndCatalogTests
         var evolution = TestCards.Stage1Pokemon("xy1-2", "Raichu", "A", hp: 90);
         state.Players[0].AddToHand(evolution);
 
-        ApplyAbility(effects, state, "Upside-Down", user);
+        ApplyAbility(effects, state, "Upside-Down Evolution", user);
 
         Assert.Equal("Raichu", user.Card.Name);
         Assert.Empty(user.Statuses);

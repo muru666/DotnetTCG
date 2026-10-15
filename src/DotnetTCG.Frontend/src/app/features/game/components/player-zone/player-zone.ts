@@ -4,7 +4,13 @@ import { BoardDto, PokemonInPlay } from '../../../../shared/models/dtos/game-sta
 import { CardChipComponent } from '../card-chip/card-chip';
 import { ActiveCardComponent } from '../active-card/active-card';
 
-const PASSIVE_ABILITIES = new Set(['Fur Coat']);
+// Habilidades con efecto activable en el motor (ver AbilityRegistry en el backend).
+// Todo lo demas (Fur Coat, Sweet Veil, Forest's Curse, Destiny Burst, Spiky Shield)
+// es pasivo o disparado: no tiene boton porque el motor lo rechaza.
+const ACTIVATABLE_ABILITIES = new Set([
+  'Mystical Fire', 'Water Shuriken', 'Upside-Down Evolution',
+  'Stance Change', 'Fairy Transfer', 'Drive Off',
+]);
 
 @Component({
   selector: 'app-player-zone',
@@ -80,7 +86,7 @@ const PASSIVE_ABILITIES = new Set(['Fur Coat']);
                       </div>
                       @if (!isOpponent() && hasActivatableAbilities(poke)) {
                         <div class="bench-abilities">
-                          @for (ab of nonPassiveAbilities(poke.pokemonCard.abilities); track $index) {
+                          @for (ab of activatableAbilities(poke.pokemonCard.abilities); track $index) {
                             <button class="bench-ability-btn" [disabled]="!canUseAbility()"
                           (click)="canUseAbility() && abilityAction.emit({ abilityName: ab.name, pokemonId: poke.pokemonCard.id })">
                               {{ ab.name }}
@@ -149,7 +155,7 @@ const PASSIVE_ABILITIES = new Set(['Fur Coat']);
           @if (hasActivatableAbilities(active)) {
             <div class="actions-section">
               <div class="actions-title">HABILIDAD</div>
-              @for (ab of nonPassiveAbilities(active.pokemonCard.abilities); track $index) {
+              @for (ab of activatableAbilities(active.pokemonCard.abilities); track $index) {
                 <button class="action-btn ability-btn" [class.btn-disabled]="!canUseAbility()" [disabled]="!canUseAbility()"
                 (click)="canUseAbility() && abilityAction.emit({ abilityName: ab.name, pokemonId: active.pokemonCard.id })">
                   {{ ab.name }}
@@ -341,10 +347,10 @@ export class PlayerZoneComponent {
   }
 
   protected hasActivatableAbilities(poke: PokemonInPlay): boolean {
-    return poke.pokemonCard.abilities.some((a: { name: string }) => !PASSIVE_ABILITIES.has(a.name));
+    return poke.pokemonCard.abilities.some(a => ACTIVATABLE_ABILITIES.has(a.name));
   }
 
-  protected nonPassiveAbilities(abilities: { name: string }[]): { name: string }[] {
-    return abilities.filter(a => !PASSIVE_ABILITIES.has(a.name));
+  protected activatableAbilities(abilities: { name: string }[]): { name: string }[] {
+    return abilities.filter(a => ACTIVATABLE_ABILITIES.has(a.name));
   }
 }

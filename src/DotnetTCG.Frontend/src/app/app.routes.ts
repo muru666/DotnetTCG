@@ -33,7 +33,7 @@ export const routes: Routes = [
     data: { title: 'Recuperar Contraseña' }
   },
   {
-    path: 'api/auth/reset-password',
+    path: 'cambiar-contrasena',
     canActivate: [redirectIfAuthenticatedGuard],
     loadComponent: () => import('./features/auth/pages/reset-password-page/reset-password-page').then(m => m.ResetPasswordPageComponent),
     data: { title: 'Cambiar Contraseña' }

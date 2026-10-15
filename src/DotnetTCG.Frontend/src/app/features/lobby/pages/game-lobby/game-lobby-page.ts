@@ -49,7 +49,7 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
   protected isSpectator = signal(false);
 
   private readonly currentUserId = this.authService.getUserId();
-  private stompSub?: Subscription;
+  private hubSubs?: Subscription;
   private joinPassword: string | null = null;
 
   protected readonly myPlayer = computed(() => {
@@ -87,7 +87,7 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.stompSub?.unsubscribe();
+    this.hubSubs?.unsubscribe();
     if (!this.isSpectator()) {
       const id = this.gameId();
       if (id) void this.signalService.leaveLobby(id).catch(() => {});
@@ -123,7 +123,7 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
           this.navigateToGame(gameId);
           return;
         }
-        this.http.get<LobbyState>(`${environment.apiUrl}/v1/games/${gameId}/lobby`).subscribe({
+        this.gameService.getLobbyState(gameId).subscribe({
           next: state => {
             const alreadyIn = state.players.some(p => p.playerId === this.currentUserId);
             if (!this.isSpectator() && !alreadyIn && state.players.length >= 2) {
@@ -139,7 +139,7 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
             if (!this.isSpectator()) {
               this.loadDecks();
             }
-            this.connectStomp(gameId);
+            this.connectHub(gameId);
           },
           error: () => {
             this.isLoading.set(false);
@@ -154,12 +154,12 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private connectStomp(gameId: string): void {
+  private connectHub(gameId: string): void {
     this.signalService.connect()
       .then(() => {
-        this.stompSub = this.signalService.actionResult$.subscribe(() => {});
-        const lobbySub = this.signalService.lobby$.subscribe(state => {
-          this.handleLobbyMessage(state as LobbyState);
+        this.hubSubs = new Subscription();
+        const lobbySub = this.gameService.lobbyState$.subscribe(state => {
+          this.handleLobbyMessage(state);
         });
         const startedSub = this.signalService.gameStarted$.subscribe(event => {
           if (event.gameId === gameId) {
@@ -172,9 +172,9 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
             this.router.navigate(['/lobby'], { state: { error: err.message } });
           }
         });
-        this.stompSub.add(lobbySub);
-        this.stompSub.add(startedSub);
-        this.stompSub.add(errorSub);
+        this.hubSubs.add(lobbySub);
+        this.hubSubs.add(startedSub);
+        this.hubSubs.add(errorSub);
 
         if (this.isSpectator()) {
           void this.signalService.joinAsSpectator(gameId).catch(err => {
@@ -197,6 +197,7 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
   // ── Lobby message handler ─────────────────────────────────────────────────
 
   private handleLobbyMessage(state: LobbyState): void {
+    if (state.gameId !== this.gameId()) return;
     this.lobbyState.set(state);
     this.isPublicSetting.set(state.isPublic !== false);
     this.acceptsSpectatorsSetting.set(state.acceptsSpectators !== false);

@@ -59,15 +59,6 @@
       />
     }
 
-    @if (coinFlipResult(); as flip) {
-      <app-coin-flip
-        [result]="flip.result"
-        [label]="flip.label"
-        [results]="flip.results ?? []"
-        (dismiss)="onCoinFlipDismiss()"
-      />
-    }
-
     <!-- Floating action buttons -->
     <div class="float-buttons">
       <button class="float-btn chat-btn" [class.active]="sidePanel().isOpen && sidePanel().activeTab === 'chat'" (click)="onOpenChat()" title="Chat">
@@ -217,7 +208,6 @@
         [currentUserId]="authService.getUserId() ?? ''"
         (sendMessage)="onSendMessage($event)"
         (toggle)="onSidePanelToggle($event)"
-        (tabChange)="onTabChange($event)"
       />
     </div>
 
@@ -238,21 +228,6 @@
             @if (gameWinnerName(); as winner) {
               <p class="winner-name">Ganador: {{ winner }}</p>
             }
-          }
-          <div class="winner-actions">
-            <button class="winner-btn" (click)="goBack()">Volver al Lobby</button>
-          </div>
-        </div>
-      </div>
-    }
-
-    @if (disconnectCountdown() !== null && !isPaused()) {
-      <div class="winner-overlay">
-        <div class="winner-card">
-          <h1 class="winner-title">Desconexión detectada</h1>
-          <p class="winner-name">El oponente se desconectó</p>
-          @if (disconnectCountdown(); as timer) {
-            <p class="winner-info">La partida se pausará; si no se reconecta en {{ timer }} segundos</p>
           }
           <div class="winner-actions">
             <button class="winner-btn" (click)="goBack()">Volver al Lobby</button>
@@ -296,7 +271,6 @@
     <app-choice-dialog
       [pendingChoice]="pc"
       (resolve)="onChoiceResolve($event)"
-      (cancel)="onChoiceCancel()"
     />
   }
 }

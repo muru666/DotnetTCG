@@ -16,7 +16,7 @@ import { Card } from '../../../../shared/models/dtos/game-state.model';
       (dblclick)="preview.emit(card()?.imageUrl ?? ''); $event.stopPropagation()"
       cdkDrag
       [cdkDragData]="card()?.id"
-      [cdkDragDisabled]="!draggable() || disabled()"
+      [cdkDragDisabled]="!draggable()"
     >
       @if (faceDown()) {
         <div class="card-back">
@@ -110,7 +110,6 @@ export class CardComponent {
   readonly selected = input(false);
   readonly faceDown = input(false);
   readonly draggable = input(false);
-  readonly disabled = input(false);
   readonly clicked = output<void>();
   readonly preview = output<string>();
 }

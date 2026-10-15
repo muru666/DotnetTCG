@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { GameState, GameActionResponse, BoardDto, GameLogEntry, Attack, PokemonInPlay, PokemonCard, EnergyCard, TrainerCard, Card, PendingChoice } from '../../models/dtos/game-state.model';
 import { LobbyState } from '../../models/dtos/lobby-state.model';
 import { ChatMessage, ChatMessageDto } from '../../models/chat/chat-message.model';
-import { ActionResultResponse, GameEventDTO, CoinFlipEventDTO } from '../../models/dtos/action-result.model';
+import { ActionResultResponse, GameEventDTO } from '../../models/dtos/action-result.model';
 import { AuthService } from '../../../../app/core/services/auth.service';
 import { GameSignalService, HubGameActionRequest } from '../websocket/game-signal.service';
 
@@ -177,6 +177,7 @@ function matchesFilter(lobby: BackendLobby, filter?: string): boolean {
 interface BackendGameSummary {
   id: string;
   status: string;
+  players: { userId: string; order: number; username: string }[];
 }
 
 @Injectable({
@@ -187,7 +188,6 @@ export class GameService {
 
   gameState = signal<GameState | null>(null);
   gameEvents = signal<GameEventDTO[]>([]);
-  coinFlip = signal<CoinFlipEventDTO | null>(null);
   playerIndex = signal<number>(0);
   gameId = signal<string | null>(null);
   isLoading = signal<boolean>(false);
@@ -206,6 +206,9 @@ export class GameService {
   public gameState$ = this.gameStateSubject.asObservable();
 
   private actionResultSubject = new Subject<{ gameState?: GameState; error?: string; events?: GameEventDTO[] }>();
+  private lobbyStateSubject = new Subject<LobbyState>();
+  /** Lobby mapeado al modelo UI: el evento 'lobby' del hub trae BackendLobby crudo. */
+  public lobbyState$ = this.lobbyStateSubject.asObservable();
   private hubSubscription?: Subscription;
   private lobbyPlayers: { userId: string; order: number; username: string }[] = [];
   private myMulligans = 0;
@@ -249,6 +252,11 @@ export class GameService {
     this.error.set(null);
     this.gameId.set(gameId);
     return this.loadGameState(gameId, false).pipe(tap(() => this.isLoading.set(false)));
+  }
+
+  public loadSpectatorGame(gameId: string): Observable<GameState> {
+    this.gameId.set(gameId);
+    return this.loadGameState(gameId, true).pipe(tap(() => this.isLoading.set(false)));
   }
 
   public loadGameSilent(gameId: string): Observable<GameState> {
@@ -362,7 +370,7 @@ export class GameService {
     return this.http.get<BackendGameSummary[]>(`${this.apiUrl}/v1/games/my-resumable`).pipe(
       map(games => games.map(g => ({
         gameId: g.id,
-        players: [],
+        players: (g.players ?? []).map(p => ({ playerId: p.userId, order: p.order, username: p.username })),
         status: mapGameStatus(g.status),
         createdAt: null,
         isPublic: true,
@@ -728,6 +736,12 @@ export class GameService {
       this.actionResultSubject.next({ error: err.message });
     });
     const chatSub = this.signalService.chat$.subscribe(dto => this.handleChatMessage(dto));
+    const lobbyPushSub = this.signalService.lobby$.subscribe(payload => {
+      void this.mapLobby(payload as BackendLobby)
+        .then(mapped => this.lobbyStateSubject.next(mapped))
+        .catch(() => {});
+    });
+    this.hubSubscription.add(lobbyPushSub);
     this.hubSubscription.add(stateSub);
     this.hubSubscription.add(errorSub);
     this.hubSubscription.add(chatSub);
@@ -794,7 +808,7 @@ export class GameService {
     this.playerIndex.set(order);
     const opponentOrder = 1 - order;
     const [myBoard, opponentBoard] = await Promise.all([
-      this.mapBoard(view.boards[order], true),
+      this.mapBoard(view.boards[order], !this.spectatorMode),
       this.mapBoard(view.boards[opponentOrder], false),
     ]);
     const winner = view.winnerPlayerIndex === null || view.winnerPlayerIndex === undefined
@@ -817,7 +831,6 @@ export class GameService {
       currentSetupPlayerIndex: view.status === 'Setup' ? view.currentPlayerIndex : -1,
       startingPlayerIndex: view.startingPlayerIndex ?? 0,
       pendingChoice: this.mapPendingChoice(view),
-      disconnectTimerSeconds: null,
       mulliganCounts: mulligans,
       stadiumCard: view.stadiumCardId ? await this.fetchTrainer(view.stadiumCardId) : null,
       spectator: this.spectatorMode,

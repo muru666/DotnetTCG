@@ -19,7 +19,6 @@ export interface GameState {
   currentSetupPlayerIndex: number;
   startingPlayerIndex?: number;
   pendingChoice: PendingChoice | null;
-  disconnectTimerSeconds: number | null;
   mulliganCounts?: number[];
   stadiumCard: TrainerCard | null;
   spectator?: boolean;

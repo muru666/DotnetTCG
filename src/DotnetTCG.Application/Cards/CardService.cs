@@ -10,12 +10,13 @@ public sealed class CardService(ICardRepository cards, IPokeApiClient pokeApi)
     public const int MaxPageSize = 100;
 
     public async Task<PagedResult<CardDto>> SearchAsync(
-        string? name, PokemonType? type, int page, int pageSize, CancellationToken cancellationToken)
+        string? name, PokemonType? type, SuperType? supertype,
+        int page, int pageSize, CancellationToken cancellationToken)
     {
         page = Math.Max(0, page);
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
-        var total = await cards.CountAsync(name, type, cancellationToken);
-        var items = await cards.SearchAsync(name, type, page, pageSize, cancellationToken);
+        var total = await cards.CountAsync(name, type, supertype, cancellationToken);
+        var items = await cards.SearchAsync(name, type, supertype, page, pageSize, cancellationToken);
         return new PagedResult<CardDto>(items.Select(CardDto.FromDomain).ToList(), total, page, pageSize);
     }
 

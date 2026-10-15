@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -12,7 +11,7 @@ type GameFilter = 'todas' | 'publicas' | 'privadas' | 'espectar';
 @Component({
   selector: 'app-game-searcher',
   standalone: true,
-  imports: [RouterLink, DatePipe, FormsModule],
+  imports: [RouterLink, FormsModule],
   templateUrl: './lobby-page.html',
   styleUrl: './lobby-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -71,8 +70,8 @@ export class GameSearcherComponent implements OnInit, OnDestroy {
 
   private checkActiveGame(): void {
     this.gameService.getMyActiveGame().subscribe({
-      // PAUSED games are resumed through the explicit "Cargar Partida" ready-lobby flow,
-      // not through this quick-resume button.
+      // Las pausadas se reanudan desde "Tus Partidas" (dialogo); el boton rapido
+      // solo reabre partidas en curso (SETUP/IN_PROGRESS).
       next: game => this.activeGame.set(game && game.status !== 'PAUSED' ? game : null)
     });
   }

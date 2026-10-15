@@ -20,17 +20,6 @@
     </div>
 
     <div class="spec-layout">
-      <div class="spec-chat-col">
-        <div class="spec-chat-header">Chat de jugadores</div>
-        <div class="spec-chat-body">
-          <app-chat-panel
-            [messages]="playerChatMessages()"
-            [currentUserId]="authService.getUserId() ?? ''"
-            [readOnly]="true"
-          />
-        </div>
-      </div>
-
       <div class="spec-board">
         <div class="spec-board-half">
           <app-spectator-player-zone
@@ -52,7 +41,7 @@
       </div>
 
       <div class="spec-chat-col">
-        <div class="spec-chat-header">Chat de espectadores</div>
+        <div class="spec-chat-header">Chat</div>
         <div class="spec-chat-body">
           <app-chat-panel
             [messages]="gameService.chatMessages()"

@@ -29,9 +29,10 @@ public sealed class EfCardRepository(AppDbContext db) : ICardRepository
     }
 
     public async Task<IReadOnlyList<Card>> SearchAsync(
-        string? name, PokemonType? type, int page, int pageSize, CancellationToken cancellationToken)
+        string? name, PokemonType? type, SuperType? supertype,
+        int page, int pageSize, CancellationToken cancellationToken)
     {
-        var entities = await ApplyFilter(db.Cards.AsNoTracking(), name, type)
+        var entities = await ApplyFilter(db.Cards.AsNoTracking(), name, type, supertype)
             .OrderBy(c => c.Id)
             .Skip(page * pageSize)
             .Take(pageSize)
@@ -39,8 +40,8 @@ public sealed class EfCardRepository(AppDbContext db) : ICardRepository
         return entities.Select(CardMapper.ToDomain).ToList();
     }
 
-    public Task<int> CountAsync(string? name, PokemonType? type, CancellationToken cancellationToken)
-        => ApplyFilter(db.Cards.AsNoTracking(), name, type).CountAsync(cancellationToken);
+    public Task<int> CountAsync(string? name, PokemonType? type, SuperType? supertype, CancellationToken cancellationToken)
+        => ApplyFilter(db.Cards.AsNoTracking(), name, type, supertype).CountAsync(cancellationToken);
 
     public async Task UpsertRangeAsync(IEnumerable<Card> cards, CancellationToken cancellationToken)
     {
@@ -61,10 +62,15 @@ public sealed class EfCardRepository(AppDbContext db) : ICardRepository
         => db.Cards.AsNoTracking().CountAsync(c => c.SetId == setId, cancellationToken);
 
     private static IQueryable<CardEntity> ApplyFilter(
-        IQueryable<CardEntity> query, string? name, PokemonType? type)
+        IQueryable<CardEntity> query, string? name, PokemonType? type, SuperType? supertype)
     {
         if (!string.IsNullOrWhiteSpace(name))
             query = query.Where(c => EF.Functions.ILike(c.Name, $"%{name}%"));
+        if (supertype is not null)
+        {
+            var superValue = (int)supertype.Value;
+            query = query.Where(c => c.Supertype == superValue);
+        }
         if (type is not null)
         {
             var typeValue = (int)type.Value;

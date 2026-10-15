@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { NgOptimizedImage } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CdkDropListGroup, CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
@@ -9,7 +10,7 @@ import { ChatMessage } from '../../../../shared/models/chat/chat-message.model';
 import { GameHistoryEvent } from '../../../../shared/models/ui/game-history-event.model';
 import { SidePanelState } from '../../../../shared/models/ui/side-panel.model';
 import { Card } from '../../../../shared/models/dtos/game-state.model';
-import { GameEventDTO, CoinFlipEventDTO } from '../../../../shared/models/dtos/action-result.model';
+import { GameEventDTO } from '../../../../shared/models/dtos/action-result.model';
 import { PlayerZoneComponent } from '../../components/player-zone/player-zone';
 import { SidePanelComponent } from '../../components/side-panel/side-panel';
 import { SetupPhaseComponent } from '../../components/setup-phase/setup-phase';
@@ -55,19 +56,14 @@ export class GamePageComponent implements OnInit, OnDestroy {
   protected readonly gameHistory = signal<GameHistoryEvent[]>([]);
   protected readonly showSurrenderConfirm = signal(false);
 
-  protected readonly coinFlipResult = signal<CoinFlipEventDTO | null>(null);
-  private stompConnected = false;
-
-  protected readonly disconnectCountdown = signal<number | null>(null);
   protected readonly isDisconnected = signal(!this.gameSignalService.isConnected());
   protected readonly showCoinFlip = signal(false);
   protected readonly previewImageUrl = signal<string | null>(null);
   protected readonly toasts = signal<Toast[]>([]);
-  private readonly dismissTimers = new Map<string, any>();
+  private readonly dismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly MAX_TOASTS = 5;
   private readonly previousStatus = signal<string | null>(null);
-  private disconnectCountdownInterval: any = null;
-  private connectionSub: any = null;
+  private connectionSub: Subscription | null = null;
   private lastChatMessageCount = 0;
 
   protected readonly isSetup = computed(() => {
@@ -102,8 +98,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
     effect((onCleanup) => {
       const state = this.gameService.gameState();
       if (state?.status === 'PAUSED') {
-        this.stopDisconnectCountdown();
-        this.disconnectCountdown.set(null);
         const intervalId = setInterval(() => {
           const id = this.gameService.gameId();
           if (id) this.gameSignalService.reconnect(id).catch(() => {});
@@ -128,19 +122,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
 
     effect(() => {
-      const state = this.gameService.gameState();
-      if (!this.stompConnected) return;
-      const serverTimer = state?.disconnectTimerSeconds;
-      if (serverTimer != null && serverTimer > 0) {
-        this.disconnectCountdown.set(serverTimer);
-        this.startDisconnectCountdown();
-      } else if (serverTimer == null || serverTimer <= 0) {
-        this.stopDisconnectCountdown();
-        this.disconnectCountdown.set(null);
-      }
-    });
-
-    effect(() => {
       const events = this.gameService.gameEvents();
       for (const event of events) {
         this.showToast(event);
@@ -159,20 +140,12 @@ export class GamePageComponent implements OnInit, OnDestroy {
       this.lastChatMessageCount = count;
     });
 
-    effect(() => {
-      const flip = this.gameService.coinFlip();
-      if (flip) {
-        this.coinFlipResult.set(flip);
-      }
-    });
-
     this.connectionSub = this.gameSignalService.connectionStatus$.subscribe(connected => {
       this.isDisconnected.set(!connected);
     });
   }
 
   ngOnDestroy(): void {
-    this.stopDisconnectCountdown();
     this.connectionSub?.unsubscribe();
     this.gameService.disconnect();
   }
@@ -183,26 +156,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
     this.gameSignalService.reconnect(gameId).catch(() => {});
   }
 
-  private startDisconnectCountdown(): void {
-    this.stopDisconnectCountdown();
-    this.disconnectCountdownInterval = setInterval(() => {
-      this.disconnectCountdown.update(t => {
-        if (t === null || t <= 1) {
-          this.stopDisconnectCountdown();
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-  }
-
-  private stopDisconnectCountdown(): void {
-    if (this.disconnectCountdownInterval !== null) {
-      clearInterval(this.disconnectCountdownInterval);
-      this.disconnectCountdownInterval = null;
-    }
-  }
-
   protected readonly evolvableSlots = computed<number[]>(() => {
     const state = this.gameService.gameState();
     const idx = this.selectedCardIndex();
@@ -210,8 +163,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
     const hand = state.myBoard.hand;
     if (!Array.isArray(hand)) return [];
     const card = hand[idx];
-    if (!card || !(card as any).evolvesFrom) return [];
-    const evolvesFrom = (card as any).evolvesFrom as string;
+    if (!card || !card.evolvesFrom) return [];
+    const evolvesFrom = card.evolvesFrom;
     const slots: number[] = [];
     if (state.myBoard.activePokemon?.pokemonCard?.name === evolvesFrom) {
       slots.push(-1);
@@ -286,8 +239,9 @@ export class GamePageComponent implements OnInit, OnDestroy {
     return new Array(Math.min(this.opponentHandCount(), 7));
   }
 
-  protected onHandCardDrop(event: CdkDragDrop<any>): void {
-    // no-op: cards should not be dropped back into hand
+  protected onHandCardDrop(event: CdkDragDrop<string>): void {
+    // Intencionalmente vacio: las cartas no vuelven a la mano por arrastre.
+    void event;
   }
 
   protected onCardClick(index: number): void {
@@ -395,14 +349,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
     this.gameService.resolveChoice(event.choiceId, event.selectedOptionIds).subscribe();
   }
 
-  protected onChoiceCancel(): void {
-    // El backend no soporta cancelar elecciones pendientes: se ignora.
-  }
-
   protected onCoinFlipDismiss(): void {
     this.showCoinFlip.set(false);
-    this.coinFlipResult.set(null);
-    this.gameService.coinFlip.set(null);
   }
 
   protected onOpenChat(): void {
@@ -417,10 +365,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   protected onSidePanelToggle(open: boolean): void {
     this.sidePanel.update(s => ({ ...s, isOpen: open, newMessageCount: 0 }));
-  }
-
-  protected onTabChange(tab: 'chat' | 'history'): void {
-    this.sidePanel.update(s => ({ ...s, activeTab: tab, newMessageCount: 0 }));
   }
 
   protected onPreviewCard(url: string): void {

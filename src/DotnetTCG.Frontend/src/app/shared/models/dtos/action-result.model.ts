@@ -9,12 +9,6 @@ export interface GameEventDTO {
   timestamp: string;
 }
 
-export interface CoinFlipEventDTO {
-  result: 'HEADS' | 'TAILS';
-  label: string;
-  results?: string[];
-}
-
 export interface ActionResultResponse {
   success: boolean;
   message: string;
@@ -22,5 +16,4 @@ export interface ActionResultResponse {
   pendingChoice?: PendingChoice | null;
   events?: string[];
   targetPlayerId?: string;
-  coinFlip?: CoinFlipEventDTO;
 }

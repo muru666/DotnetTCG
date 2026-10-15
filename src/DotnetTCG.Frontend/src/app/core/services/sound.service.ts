@@ -7,7 +7,6 @@ const UI_SOUND_FILES: Record<UiSoundType, string[]> = {
   error: ['/sounds/sfx/ui/error/error1.mp3']
 };
 
-const MUTE_KEY = 'dotnettcp.muted';
 const INTERACTIVE_SELECTOR = 'button, [role="button"], a.btn';
 
 @Injectable({
@@ -26,28 +25,7 @@ export class SoundService {
   }
 
   public playError(): void {
-    if (this.isMuted()) {
-      return;
-    }
     this.playFile(UI_SOUND_FILES.error[0]);
-  }
-
-  public toggleMute(): boolean {
-    const next = !this.isMuted();
-    try {
-      localStorage.setItem(MUTE_KEY, next ? '1' : '0');
-    } catch {
-      // Sin almacenamiento: el mute vive solo en memoria de esta sesión.
-    }
-    return next;
-  }
-
-  public isMuted(): boolean {
-    try {
-      return localStorage.getItem(MUTE_KEY) === '1';
-    } catch {
-      return false;
-    }
   }
 
   private handleInteractiveEvent(event: Event): void {
@@ -55,7 +33,7 @@ export class SoundService {
       return;
     }
     const button = event.target.closest<HTMLElement>(INTERACTIVE_SELECTOR);
-    if (button === null || (button as HTMLButtonElement).disabled || this.isMuted()) {
+    if (button === null || (button as HTMLButtonElement).disabled) {
       return;
     }
 

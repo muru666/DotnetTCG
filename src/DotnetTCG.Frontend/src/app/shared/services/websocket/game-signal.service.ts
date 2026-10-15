@@ -32,7 +32,6 @@ export interface HubActionResult {
 export class GameSignalService {
   private connection: signalR.HubConnection | null = null;
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
-  private gameId: string | null = null;
   private readonly authService = inject(AuthService);
 
   private readonly lobbySubject = new Subject<unknown>();
@@ -41,7 +40,6 @@ export class GameSignalService {
   private readonly gameStateSubject = new Subject<unknown>();
   private readonly chatSubject = new Subject<{ senderId: string; text: string; at: string }>();
   private readonly hubErrorSubject = new Subject<{ code: string; message: string }>();
-  private readonly gamePausedSubject = new Subject<{ gameId: string }>();
 
   connectionStatus$ = this.connectionStatusSubject.asObservable();
   lobby$ = this.lobbySubject.asObservable();
@@ -50,7 +48,6 @@ export class GameSignalService {
   gameState$ = this.gameStateSubject.asObservable();
   chat$ = this.chatSubject.asObservable();
   hubError$ = this.hubErrorSubject.asObservable();
-  gamePaused$ = this.gamePausedSubject.asObservable();
 
   isConnected(): boolean {
     return this.connectionStatusSubject.value;
@@ -77,7 +74,6 @@ export class GameSignalService {
     connection.on('game-state', (payload) => this.gameStateSubject.next(payload));
     connection.on('chat', (payload) => this.chatSubject.next(payload));
     connection.on('error', (payload) => this.hubErrorSubject.next(payload));
-    connection.on('game-paused', (payload) => this.gamePausedSubject.next(payload));
     connection.onreconnecting(() => this.connectionStatusSubject.next(false));
     connection.onreconnected(() => this.connectionStatusSubject.next(true));
     connection.onclose(() => {
@@ -95,7 +91,6 @@ export class GameSignalService {
   async disconnect(): Promise<void> {
     const connection = this.connection;
     this.connection = null;
-    this.gameId = null;
     this.connectionStatusSubject.next(false);
     if (connection) {
       await connection.stop().catch(() => {});
@@ -110,7 +105,6 @@ export class GameSignalService {
   }
 
   joinLobby(gameId: string, password?: string | null): Promise<void> {
-    this.gameId = gameId;
     return this.requireConnection().invoke('JoinLobby', gameId, password ?? null);
   }
 
@@ -143,12 +137,10 @@ export class GameSignalService {
   }
 
   reconnect(gameId: string): Promise<void> {
-    this.gameId = gameId;
     return this.requireConnection().invoke('Reconnect', gameId);
   }
 
   joinAsSpectator(gameId: string): Promise<void> {
-    this.gameId = gameId;
     return this.requireConnection().invoke('JoinAsSpectator', gameId);
   }
 

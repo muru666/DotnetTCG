@@ -7,7 +7,7 @@ import { PendingChoice } from '../../../../shared/models/dtos/game-state.model';
   imports: [NgOptimizedImage],
   template: `
     @if (pendingChoice(); as pc) {
-      <div class="choice-overlay" (click)="onCancel()">
+      <div class="choice-overlay">
         <div class="choice-dialog" (click)="$event.stopPropagation()">
           <div class="choice-prompt">{{ pc.promptLabel }}</div>
           <div class="choice-options">
@@ -25,7 +25,6 @@ import { PendingChoice } from '../../../../shared/models/dtos/game-state.model';
           <div class="choice-actions">
             <button class="choice-confirm" [class.btn-disabled]="selectedIds().size === 0"
               [disabled]="selectedIds().size === 0" (click)="onConfirm(pc.choiceId)">Confirmar</button>
-            <button class="choice-cancel" (click)="onCancel()">Cancelar</button>
           </div>
         </div>
       </div>
@@ -67,19 +66,12 @@ import { PendingChoice } from '../../../../shared/models/dtos/game-state.model';
     }
     .choice-confirm:hover { background: #4f46e5; }
     .choice-confirm.btn-disabled { opacity: 0.35; cursor: not-allowed; }
-    .choice-cancel {
-      width: 100%; border: none; border-radius: 8px; padding: 8px;
-      background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4);
-      font-family: 'Nunito', sans-serif; font-size: 0.75rem; cursor: pointer;
-    }
-    .choice-cancel:hover { background: rgba(255,255,255,0.1); }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ChoiceDialogComponent {
   readonly pendingChoice = input<PendingChoice | null>(null);
   readonly resolve = output<{ choiceId: string; selectedOptionIds: string[] }>();
-  readonly cancel = output<void>();
 
   protected readonly selectedIds = signal(new Set<string>());
 
@@ -91,21 +83,12 @@ export class ChoiceDialogComponent {
   }
 
   protected onToggle(optionId: string): void {
-    const next = new Set(this.selectedIds());
-    if (next.has(optionId)) {
-      next.delete(optionId);
-    } else {
-      next.add(optionId);
-    }
-    this.selectedIds.set(next);
+    // El motor resuelve una sola opcion: elegir reemplaza la anterior.
+    this.selectedIds.set(this.selectedIds().has(optionId) ? new Set() : new Set([optionId]));
   }
 
   protected onConfirm(choiceId: string): void {
     if (this.selectedIds().size === 0) return;
     this.resolve.emit({ choiceId, selectedOptionIds: [...this.selectedIds()] });
-  }
-
-  protected onCancel(): void {
-    this.cancel.emit();
   }
 }

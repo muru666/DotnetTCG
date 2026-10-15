@@ -49,7 +49,7 @@ export class RecoverPasswordPageComponent implements OnDestroy {
     this.authService.requestPasswordRecovery(email!).subscribe({
       next: () => {
         this.isSubmitting.set(false);
-        this.successMessage.set('Ve a tu correo y apreta el link que te hemos enviado.');
+        this.successMessage.set('Te enviamos un codigo a tu correo. Ingresalo en la pantalla de cambio de contraseña.');
         this.startCooldown();
       },
       error: (error: Error) => {

@@ -17,11 +17,11 @@ public sealed class CardsController(
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<CardDto>>> Search(
-        [FromQuery] string? name, [FromQuery] string? type,
+        [FromQuery] string? name, [FromQuery] string? type, [FromQuery] string? supertype,
         [FromQuery] int page = 0, [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var query = new SearchCardsQuery(name, type, page, pageSize);
+        var query = new SearchCardsQuery(name, type, supertype, page, pageSize);
         var validation = await searchValidator.ValidateAsync(query, ct);
         if (!validation.IsValid)
             return this.Invalid(validation);
@@ -34,7 +34,15 @@ public sealed class CardsController(
             pokemonType = parsed;
         }
 
-        return Ok(await cards.SearchAsync(name, pokemonType, page, pageSize, ct));
+        SuperType? superType = null;
+        if (supertype is not null)
+        {
+            if (!Enum.TryParse<SuperType>(supertype, ignoreCase: true, out var parsedSuper))
+                return BadRequest(new { message = $"Unknown supertype '{supertype}'." });
+            superType = parsedSuper;
+        }
+
+        return Ok(await cards.SearchAsync(name, pokemonType, superType, page, pageSize, ct));
     }
 
     [HttpGet("{id}")]
