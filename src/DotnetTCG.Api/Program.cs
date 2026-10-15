@@ -3,8 +3,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotnetTCG.Application;
 using DotnetTCG.Application.Auth;
+using DotnetTCG.Application.Decks;
 using DotnetTCG.Api.Hubs;
 using DotnetTCG.Infrastructure;
+using DotnetTCG.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
@@ -110,6 +112,24 @@ if (args is ["seed-cards", var seedPath])
     var seeder = services.GetRequiredService<DotnetTCG.Infrastructure.External.CardSeedService>();
     var count = await seeder.SeedFromFileAsync(seedPath, CancellationToken.None);
     Console.WriteLine($"Seeded {count} cards from {seedPath}.");
+    return;
+}
+
+if (args is ["backfill-starter-decks"])
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<AppDbContext>();
+    var decks = services.GetRequiredService<DeckService>();
+    var ids = await db.Users.AsNoTracking().Select(u => u.Id).ToListAsync();
+    var created = 0;
+    foreach (var id in ids)
+    {
+        // Idempotente: salta usuarios que ya tienen mazos.
+        if (await decks.EnsureStarterDeckAsync(id, CancellationToken.None) is not null)
+            created++;
+    }
+    Console.WriteLine($"Backfill: {created} mazos iniciales creados ({ids.Count} usuarios).");
     return;
 }
 

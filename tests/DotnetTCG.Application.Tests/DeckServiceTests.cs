@@ -1,5 +1,6 @@
 using DotnetTCG.Application.Common.Interfaces;
 using DotnetTCG.Application.Decks;
+using DotnetTCG.Domain.Cards;
 using DotnetTCG.Domain.Game;
 
 namespace DotnetTCG.Application.Tests;
@@ -143,5 +144,42 @@ public sealed class DeckServiceTests
         var result = await service.DeleteAsync(created.Value!.Id, Guid.NewGuid(), CancellationToken.None);
 
         Assert.Equal("Deck.NotFound", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task EnsureStarterDeck_CreatesBalanced60_ThenSkips()
+    {
+        var cards = new Dictionary<string, Card>();
+        for (var i = 0; i < 5; i++)
+            cards[$"xy1-p{i}"] = TestCardFactory.Pokemon($"xy1-p{i}", $"Poke{i}");
+        for (var i = 0; i < 5; i++)
+            cards[$"xy1-s{i}"] = TestCardFactory.Supporter($"xy1-s{i}", $"Supporter{i}");
+        cards["xy1-e"] = TestCardFactory.Energy("xy1-e");
+        var decks = new FakeDeckRepository();
+        var service = new DeckService(decks, new FakeCardRepository(cards), new RuleValidator());
+        var owner = Guid.NewGuid();
+
+        var created = await service.EnsureStarterDeckAsync(owner, CancellationToken.None);
+
+        Assert.NotNull(created);
+        Assert.Equal(DeckService.StarterDeckName, created.Name);
+        Assert.Equal(60, created.Cards.Values.Sum());
+        Assert.Equal(20, created.Cards.Where(kv => cards[kv.Key] is PokemonCard).Sum(kv => kv.Value));
+        Assert.Equal(20, created.Cards.Where(kv => cards[kv.Key] is TrainerCard).Sum(kv => kv.Value));
+        Assert.Equal(20, created.Cards.Where(kv => cards[kv.Key] is EnergyCard).Sum(kv => kv.Value));
+
+        var second = await service.EnsureStarterDeckAsync(owner, CancellationToken.None);
+
+        Assert.Null(second);
+        Assert.Single(await decks.ListByOwnerAsync(owner, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task EnsureStarterDeck_InsufficientCatalog_ReturnsNull()
+    {
+        var (service, _) = NewService();
+        var created = await service.EnsureStarterDeckAsync(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.Null(created);
     }
 }
