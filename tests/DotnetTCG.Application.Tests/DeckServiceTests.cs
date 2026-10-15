@@ -182,4 +182,30 @@ public sealed class DeckServiceTests
 
         Assert.Null(created);
     }
+
+    [Fact]
+    public async Task EnsureValidDeck_SkipsWhenValidExists_CreatesWhenOnlyInvalid()
+    {
+        var cards = new Dictionary<string, Card>();
+        for (var i = 0; i < 5; i++)
+            cards[$"xy1-p{i}"] = TestCardFactory.Pokemon($"xy1-p{i}", $"Poke{i}");
+        for (var i = 0; i < 5; i++)
+            cards[$"xy1-s{i}"] = TestCardFactory.Supporter($"xy1-s{i}", $"Supporter{i}");
+        cards["xy1-e"] = TestCardFactory.Energy("xy1-e");
+        var decks = new FakeDeckRepository();
+        var service = new DeckService(decks, new FakeCardRepository(cards), new RuleValidator());
+
+        var withValid = Guid.NewGuid();
+        await decks.AddAsync(new DeckEntry(Guid.NewGuid(), withValid, "Bueno",
+            IsValid: true, Version: 1, new Dictionary<string, int>()), CancellationToken.None);
+        Assert.Null(await service.EnsureValidDeckAsync(withValid, CancellationToken.None));
+
+        var onlyInvalid = Guid.NewGuid();
+        await service.CreateAsync(onlyInvalid, "Roto", CancellationToken.None);
+        var fixed_ = await service.EnsureValidDeckAsync(onlyInvalid, CancellationToken.None);
+
+        Assert.NotNull(fixed_);
+        Assert.True(fixed_.IsValid);
+        Assert.Equal(2, (await decks.ListByOwnerAsync(onlyInvalid, CancellationToken.None)).Count);
+    }
 }

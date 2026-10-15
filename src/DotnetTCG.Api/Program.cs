@@ -125,8 +125,8 @@ if (args is ["backfill-starter-decks"])
     var created = 0;
     foreach (var id in ids)
     {
-        // Idempotente: salta usuarios que ya tienen mazos.
-        if (await decks.EnsureStarterDeckAsync(id, CancellationToken.None) is not null)
+        // Idempotente: salta usuarios que ya tienen un mazo valido.
+        if (await decks.EnsureValidDeckAsync(id, CancellationToken.None) is not null)
             created++;
     }
     Console.WriteLine($"Backfill: {created} mazos iniciales creados ({ids.Count} usuarios).");

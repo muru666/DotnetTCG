@@ -54,8 +54,9 @@ public sealed class GamesController(
         // Mantenimiento oportunista: los lobbies abandonados se borran solos.
         await lobby.CleanupStaleAsync(clock.GetUtcNow().AddHours(-24), ct);
         var open = await lobby.ListOpenAsync(ct);
-        // Un lobby solo existe mientras su creador sigue conectado.
-        return Ok(open.Where(l => tracker.IsConnected(l.CreatorId)).ToList());
+        // Un lobby solo existe mientras su creador esta conectado A EL:
+        // con conexion global resucitarian lobbies viejos abandonados.
+        return Ok(open.Where(l => tracker.HasConnection(l.CreatorId, l.Id)).ToList());
     }
 
     [HttpGet("{id:guid}/lobby")]

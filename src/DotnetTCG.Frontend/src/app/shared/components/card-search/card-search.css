@@ -79,50 +79,54 @@
   align-content: start;
 }
 
-.cs-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.cs-grid-wrap {
+  position: relative;
 }
 
-.cs-page-btn {
-  border: 1px solid var(--surface-border);
-  border-radius: 0.4rem;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: rgba(15, 23, 42, 0.5);
-  color: var(--text-primary);
+.cs-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  background: rgba(2, 6, 23, 0.78);
+  color: #fcd34d;
+  font-size: 1.5rem;
+  line-height: 1;
   cursor: pointer;
-  transition: background 160ms ease;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  padding-bottom: 0.15rem;
+  transition: background 160ms ease, opacity 160ms ease;
   font-family: 'Nunito', sans-serif;
 }
 
-.cs-page-btn:hover:not(:disabled) {
-  background: rgba(30, 41, 59, 0.6);
+.cs-nav:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.9);
+  color: #0b1120;
 }
 
-.cs-page-btn:disabled {
-  opacity: 0.4;
+.cs-nav:disabled {
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
+.cs-nav--prev {
+  left: 0.25rem;
+}
+
+.cs-nav--next {
+  right: 0.25rem;
+}
+
 .cs-page-info {
+  min-height: 1.25rem;
+  text-align: center;
   font-size: 0.82rem;
   color: var(--text-muted);
   white-space: nowrap;
   font-family: 'Nunito', sans-serif;
-}
-
-:host-context(.pokedex-card) .cs-pagination {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  background: var(--surface);
-  padding-top: 1rem;
-  border-top: 1px solid var(--surface-border);
-  margin-top: 0.5rem;
 }

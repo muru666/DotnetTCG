@@ -37,6 +37,44 @@ public sealed class DeckService(
             if ((await decks.ListByOwnerAsync(ownerId, cancellationToken)).Count > 0)
                 return null;
 
+            return await BuildStarterAsync(ownerId, StarterDeckName, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "No se pudo crear el mazo inicial.");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Garantiza al menos un mazo valido: si todos los del usuario son invalidos
+    /// (o no tiene), crea un inicial con nombre libre. Nunca lanza.
+    /// </summary>
+    public async Task<DeckEntry?> EnsureValidDeckAsync(Guid ownerId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var owned = await decks.ListByOwnerAsync(ownerId, cancellationToken);
+            if (owned.Any(d => d.IsValid))
+                return null;
+
+            var name = StarterDeckName;
+            for (var i = 2; await decks.FindByOwnerAndNameAsync(ownerId, name, cancellationToken) is not null; i++)
+                name = $"{StarterDeckName} {i}";
+            return await BuildStarterAsync(ownerId, name, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "No se pudo asegurar un mazo valido.");
+            return null;
+        }
+    }
+
+    private async Task<DeckEntry?> BuildStarterAsync(Guid ownerId, string name, CancellationToken cancellationToken)
+    {
+        try
+        {
+
             var catalog = await cards.SearchAsync(null, null, null, 0, 500, cancellationToken);
             var pokemon = catalog
                 .OfType<PokemonCard>()
@@ -82,7 +120,7 @@ public sealed class DeckService(
                 return null;
             }
 
-            var entry = new DeckEntry(Guid.NewGuid(), ownerId, StarterDeckName,
+            var entry = new DeckEntry(Guid.NewGuid(), ownerId, name,
                 IsValid: true, Version: 1, merged);
             await decks.AddAsync(entry, cancellationToken);
             return entry;
