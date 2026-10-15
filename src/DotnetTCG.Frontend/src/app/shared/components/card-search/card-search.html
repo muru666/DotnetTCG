@@ -31,35 +31,31 @@
   @if (isLoading()) {
     <div class="cs-refresh" role="status" aria-label="Actualizando">Actualizando…</div>
   }
-  <div class="cs-grid-wrap">
-    @if (totalPages() > 1) {
-      <button class="cs-nav cs-nav--prev" type="button"
-        [disabled]="currentPage() === 0"
-        (click)="goToPage(currentPage() - 1)"
-        title="Página anterior" aria-label="Página anterior">&#8249;</button>
-    }
-    <div class="cs-grid">
-      @for (card of results(); track card.id) {
-        <app-card-tile
-          [card]="card"
-          [selected]="selectedId() === card.id"
-          [first]="$first"
-          (click)="onCardClick(card)"
-        />
-      }
-    </div>
-    @if (totalPages() > 1) {
-      <button class="cs-nav cs-nav--next" type="button"
-        [disabled]="currentPage() >= totalPages() - 1"
-        (click)="goToPage(currentPage() + 1)"
-        title="Página siguiente" aria-label="Página siguiente">&#8250;</button>
+  <div class="cs-grid">
+    @for (card of results(); track card.id) {
+      <app-card-tile
+        [card]="card"
+        [selected]="selectedId() === card.id"
+        [first]="$first"
+        (click)="onCardClick(card)"
+      />
     }
   </div>
 }
 
 @if (totalPages() > 1) {
-  <div class="cs-page-info">
-    Pág. {{ currentPage() + 1 }} de {{ totalPages() }}
-    ({{ totalElements() }} cartas)
+  <div class="cs-pagination">
+    <button class="cs-page-btn" type="button"
+      [disabled]="currentPage() === 0"
+      (click)="goToPage(currentPage() - 1)"
+    >&laquo; Anterior</button>
+    <span class="cs-page-info">
+      Pág. {{ currentPage() + 1 }} de {{ totalPages() }}
+      ({{ totalElements() }} cartas)
+    </span>
+    <button class="cs-page-btn" type="button"
+      [disabled]="currentPage() >= totalPages() - 1"
+      (click)="goToPage(currentPage() + 1)"
+    >Siguiente &raquo;</button>
   </div>
 }
