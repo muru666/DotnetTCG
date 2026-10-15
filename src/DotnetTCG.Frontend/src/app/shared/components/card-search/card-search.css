@@ -80,8 +80,23 @@
 }
 
 .cs-grid {
-  /* Altura reservada (~2 filas): la barra no salta en la ultima pagina. */
-  min-height: 24rem;
+  /* Altura fija: no se adapta a la cantidad de cartas; si sobran, scroll interno.
+     La barra de paginado queda siempre en el mismo lugar. */
+  height: 30rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 1100px) {
+  .cs-grid {
+    height: 33rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .cs-grid {
+    height: 35rem;
+  }
 }
 
 .cs-pagination {
