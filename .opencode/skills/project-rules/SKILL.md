@@ -44,3 +44,10 @@ Usar la herramienta de preguntas para todo lo anterior.
 - No disfrazar una adivinanza de decisión técnica.
 
 Esta regla existe porque adivinar ya causó desastres en el frontend del proyecto. Es prioritaria sobre cualquier otra preferencia de autonomía o velocidad.
+
+## 5. El frontend lleva tests
+
+El frontend **sí tiene tests automatizados**: la corrección se verifica con tipado estricto, build limpio, tests y revisión manual contra el contrato del backend.
+
+- Al agregar o cambiar comportamiento en el frontend, incluir los tests que lo cubran (siguiendo la skill angular-testing).
+- Los tests son parte de la entrega, no un extra opcional.
