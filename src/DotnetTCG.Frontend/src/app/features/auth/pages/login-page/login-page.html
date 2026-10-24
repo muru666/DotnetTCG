@@ -1,37 +1,35 @@
 <main class="auth-page" [style.background-image]="backgroundImage()">
-  <section class="auth-card">
+  <ui-panel padding="lg" class="auth-panel">
     <img class="auth-logo" src="/pokemonTcg_logo.png" alt="Pokemon TCG" />
     <h1 class="auth-title">Iniciar Sesion</h1>
 
     @if (requestError()) {
-      <div class="auth-message error">{{ requestError() }}</div>
+      <ui-callout variant="error">{{ requestError() }}</ui-callout>
     }
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <div class="auth-field">
-        <label for="usernameOrEmail">Usuario o Email</label>
-        <input id="usernameOrEmail" type="text" formControlName="usernameOrEmail" />
-        @if (showControlError('usernameOrEmail')) {
-          <p class="auth-error">Ingresa tu usuario o email.</p>
-        }
-      </div>
+      <ui-form-field label="Usuario o Email" fieldId="usernameOrEmail"
+        [error]="showControlError('usernameOrEmail') ? 'Ingresa tu usuario o email.' : null">
+        <input id="usernameOrEmail" type="text" formControlName="usernameOrEmail"
+          [attr.aria-invalid]="showControlError('usernameOrEmail') ? true : null"
+          [attr.aria-describedby]="showControlError('usernameOrEmail') ? 'usernameOrEmail-error' : null" />
+      </ui-form-field>
 
-      <div class="auth-field">
-        <label for="password">Contraseña</label>
-        <input id="password" type="password" formControlName="password" />
-        @if (showControlError('password')) {
-          <p class="auth-error">Ingresa tu contraseña.</p>
-        }
-      </div>
+      <ui-form-field label="Contraseña" fieldId="password"
+        [error]="showControlError('password') ? 'Ingresa tu contraseña.' : null">
+        <input id="password" type="password" formControlName="password"
+          [attr.aria-invalid]="showControlError('password') ? true : null"
+          [attr.aria-describedby]="showControlError('password') ? 'password-error' : null" />
+      </ui-form-field>
 
       <a class="auth-link" routerLink="/recuperar-contrasena">Olvide mi contraseña</a>
 
-      <div class="auth-actions">
-        <button class="auth-btn" type="submit" [disabled]="isSubmitting()">Iniciar Sesion</button>
+      <div class="auth-stack">
+        <ui-button type="submit" [loading]="isSubmitting()">Iniciar Sesion</ui-button>
       </div>
     </form>
 
     <a class="auth-link auth-centered-link" routerLink="/crear-usuario">Crear Cuenta</a>
     <a class="auth-link auth-centered-link" routerLink="/inicio">Volver a Inicio</a>
-  </section>
+  </ui-panel>
 </main>

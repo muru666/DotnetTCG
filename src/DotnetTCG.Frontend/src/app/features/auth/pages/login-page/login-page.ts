@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { BackgroundImageService } from '../../../../core/services/background-image.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ButtonComponent, PanelComponent, FormFieldComponent, CalloutComponent } from '../../../../shared/ui';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, PanelComponent, FormFieldComponent, CalloutComponent],
   templateUrl: './login-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

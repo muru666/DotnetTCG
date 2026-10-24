@@ -1,12 +1,12 @@
 <main class="auth-page" [style.background-image]="backgroundImage()">
-  <section class="auth-card">
+  <ui-panel padding="lg" class="auth-panel">
     <img class="auth-logo" src="/pokemonTcg_logo.png" alt="Pokemon TCG" />
     <h1 class="auth-title">Pokemon TCG</h1>
     <p class="auth-subtitle">Bienvenido. Elige como quieres continuar.</p>
 
-    <div class="auth-actions">
-      <button class="auth-btn" routerLink="/iniciar-sesion" type="button">Iniciar Sesion</button>
-      <button class="auth-btn" routerLink="/crear-usuario" type="button">Crear Usuario</button>
+    <div class="auth-stack">
+      <ui-button (click)="goLogin()">Iniciar Sesion</ui-button>
+      <ui-button variant="ghost" (click)="goRegister()">Crear Usuario</ui-button>
     </div>
-  </section>
+  </ui-panel>
 </main>

@@ -3,6 +3,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Router, RouterLink } from '@angular/router';
 import { BackgroundImageService } from '../../../../core/services/background-image.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ButtonComponent, PanelComponent, FormFieldComponent, CalloutComponent } from '../../../../shared/ui';
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -18,7 +19,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, PanelComponent, FormFieldComponent, CalloutComponent],
   templateUrl: './register-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { interval, Subscription, take } from 'rxjs';
 import { BackgroundImageService } from '../../../../core/services/background-image.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ButtonComponent, PanelComponent, FormFieldComponent, CalloutComponent } from '../../../../shared/ui';
 
 @Component({
   selector: 'app-recover-password-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, PanelComponent, FormFieldComponent, CalloutComponent],
   templateUrl: './recover-password-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
