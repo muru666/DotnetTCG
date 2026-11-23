@@ -17,6 +17,14 @@ public sealed class CreateDeckValidator : AbstractValidator<CreateDeckRequest>
     }
 }
 
+public sealed class RenameDeckValidator : AbstractValidator<RenameDeckRequest>
+{
+    public RenameDeckValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+    }
+}
+
 public sealed class AddCardValidator : AbstractValidator<AddCardRequest>
 {
     public AddCardValidator()
@@ -30,7 +38,10 @@ public sealed class SearchCardsValidator : AbstractValidator<SearchCardsQuery>
 {
     public SearchCardsValidator()
     {
-        RuleFor(x => x.Page).GreaterThanOrEqualTo(0);
+        // page * pageSize debe caber en int: sin tope, page=30000000 desbordaba
+        // y el backend respondía 500 (OFFSET negativo).
+        RuleFor(x => x.Page).GreaterThanOrEqualTo(0)
+            .LessThanOrEqualTo(int.MaxValue / CardService.MaxPageSize);
         RuleFor(x => x.PageSize).InclusiveBetween(1, CardService.MaxPageSize);
     }
 }

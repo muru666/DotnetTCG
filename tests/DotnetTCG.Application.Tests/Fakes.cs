@@ -77,11 +77,10 @@ internal sealed class FakeDeckRepository : IDeckRepository
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(Guid id, CancellationToken cancellationToken)
-    {
-        _decks.Remove(id);
-        return Task.CompletedTask;
-    }
+    public bool DeleteBlocked { get; set; }
+
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+        => Task.FromResult(!DeleteBlocked && _decks.Remove(id));
 }
 
 internal sealed class FakePokeApiClient(IReadOnlyList<Card> cards) : IPokeApiClient

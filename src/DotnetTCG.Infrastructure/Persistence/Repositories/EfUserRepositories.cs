@@ -5,6 +5,7 @@ using DotnetTCG.Infrastructure.Persistence;
 using DotnetTCG.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace DotnetTCG.Infrastructure.Persistence.Repositories;
 
@@ -30,7 +31,7 @@ public sealed class EfUserRepository(AppDbContext db) : IUserRepository
         return entity is null ? null : ToRecord(entity);
     }
 
-    public async Task AddAsync(UserRecord user, CancellationToken cancellationToken)
+    public async Task<UserSaveResult> AddAsync(UserRecord user, CancellationToken cancellationToken)
     {
         db.Users.Add(new UserEntity
         {
@@ -41,7 +42,23 @@ public sealed class EfUserRepository(AppDbContext db) : IUserRepository
             Role = user.Role,
             CreatedAt = DateTimeOffset.UtcNow,
         });
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation } pg)
+        {
+            // Carrera con otro registro simultáneo: el índice único manda.
+            var failed = db.Users.Local.FirstOrDefault(u => u.Id == user.Id);
+            if (failed is not null)
+                db.Entry(failed).State = EntityState.Detached;
+            return pg.ConstraintName.Contains("email", StringComparison.OrdinalIgnoreCase)
+                ? UserSaveResult.EmailTaken
+                : UserSaveResult.UsernameTaken;
+        }
+
+        return UserSaveResult.Saved;
     }
 
     public async Task UpdatePasswordAsync(Guid id, string passwordHash, CancellationToken cancellationToken)

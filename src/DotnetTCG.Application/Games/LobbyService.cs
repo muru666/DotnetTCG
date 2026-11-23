@@ -53,9 +53,12 @@ public sealed class LobbyService(
             && (password is null || !hasher.Verify(password, game.PasswordHash)))
             return Result<LobbyDto>.Failure(new Error("Game.WrongPassword", "Wrong password."));
 
+        // Órdenes compactos {0,1}: si el creadador (orden 0) salió, queda libre el 0.
+        // Asignar siempre 1 chocaría con el índice único (GameId, PlayerOrder).
+        var nextOrder = game.Players.Any(p => p.Order == 0) ? 1 : 0;
         var updated = game with
         {
-            Players = [.. game.Players, new GamePlayerData(userId, 1, null, false, Username: string.Empty)],
+            Players = [.. game.Players, new GamePlayerData(userId, nextOrder, null, false, Username: string.Empty)],
             UpdatedAt = clock.UtcNow,
         };
         return await SaveAsync(updated, cancellationToken);
@@ -136,8 +139,16 @@ public sealed class LobbyService(
         var game = await games.GetByIdAsync(gameId, cancellationToken);
         if (game is null || game.Players.All(p => p.UserId != userId))
             return Result<LeaveResult>.Failure(new Error("Game.NotFound", "Game not found."));
+        // En partida en curso no se toca Players: dejarlo sin jugadores rompería
+        // la partida (y si quedaba vacío, borraría el snapshot). El hub sale del
+        // grupo igualmente sin pasar por acá.
+        if (game.Status != GameStatus.InLobby)
+            return Result<LeaveResult>.Failure(new Error("Game.NotJoinable", "Game already started."));
 
-        var remaining = game.Players.Where(p => p.UserId != userId).ToList();
+        var remaining = game.Players
+            .Where(p => p.UserId != userId)
+            .Select((p, i) => p with { Order = i }) // reindexa: sin snapshot en lobby es seguro
+            .ToList();
         if (remaining.Count == 0)
         {
             await games.DeleteAsync(gameId, cancellationToken);

@@ -63,7 +63,10 @@ public sealed class CardsController(
 [ApiController]
 [Route("v1/decks")]
 [Authorize]
-public sealed class DecksController(DeckService decks) : ControllerBase
+public sealed class DecksController(
+    DeckService decks,
+    IValidator<CreateDeckRequest> createValidator,
+    IValidator<RenameDeckRequest> renameValidator) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<DeckDto>> Create([FromBody] CreateDeckRequest request, CancellationToken ct)
@@ -71,6 +74,9 @@ public sealed class DecksController(DeckService decks) : ControllerBase
         var userId = CurrentUser.Id(User);
         if (userId is null)
             return Unauthorized();
+        var validation = await createValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            return this.Invalid(validation);
         var result = await decks.CreateAsync(userId.Value, request.Name, ct);
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value)
@@ -102,6 +108,9 @@ public sealed class DecksController(DeckService decks) : ControllerBase
         var userId = CurrentUser.Id(User);
         if (userId is null)
             return Unauthorized();
+        var validation = await renameValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            return this.Invalid(validation);
         return this.ToActionResult(await decks.RenameAsync(id, userId.Value, request.Name, ct));
     }
 

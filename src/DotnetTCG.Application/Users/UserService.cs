@@ -29,7 +29,16 @@ public sealed class UserService(
             return Result<UserDto>.Failure(new Error("User.DuplicateEmail", "Email already registered."));
 
         var record = new UserRecord(Guid.NewGuid(), username, email, hasher.Hash(password), "User");
-        await users.AddAsync(record, cancellationToken);
+        var save = await users.AddAsync(record, cancellationToken);
+        switch (save)
+        {
+            // Carrera entre el pre-chequeo y el índice único: traducir a 409, no a 500.
+            case UserSaveResult.UsernameTaken:
+                return Result<UserDto>.Failure(new Error("User.DuplicateUsername", "Username taken."));
+            case UserSaveResult.EmailTaken:
+                return Result<UserDto>.Failure(new Error("User.DuplicateEmail", "Email already registered."));
+        }
+
         await decks.EnsureStarterDeckAsync(record.Id, cancellationToken);
         return Result<UserDto>.Success(new UserDto(record.Id, record.Username, record.Email, record.Role));
     }

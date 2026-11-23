@@ -17,10 +17,19 @@ internal sealed class FakeUserRepository : IUserRepository
     public Task<UserRecord?> FindByEmailAsync(string email, CancellationToken cancellationToken)
         => Task.FromResult(_users.Values.FirstOrDefault(u => u.Email == email));
 
-    public Task AddAsync(UserRecord user, CancellationToken cancellationToken)
+    /// <summary>Simula la carrera del índice único: AddAsync devuelve esto sin guardar.</summary>
+    public UserSaveResult? ForcedSaveResult { get; set; }
+
+    public Task<UserSaveResult> AddAsync(UserRecord user, CancellationToken cancellationToken)
     {
+        if (ForcedSaveResult is { } forced)
+            return Task.FromResult(forced);
+        if (_users.Values.Any(u => u.Username == user.Username))
+            return Task.FromResult(UserSaveResult.UsernameTaken);
+        if (_users.Values.Any(u => u.Email == user.Email))
+            return Task.FromResult(UserSaveResult.EmailTaken);
         _users[user.Id] = user;
-        return Task.CompletedTask;
+        return Task.FromResult(UserSaveResult.Saved);
     }
 
     public Task UpdatePasswordAsync(Guid id, string passwordHash, CancellationToken cancellationToken)

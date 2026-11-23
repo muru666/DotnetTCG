@@ -7,7 +7,7 @@ public interface IUserRepository
     Task<UserRecord?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<UserRecord?> FindByUsernameAsync(string username, CancellationToken cancellationToken);
     Task<UserRecord?> FindByEmailAsync(string email, CancellationToken cancellationToken);
-    Task AddAsync(UserRecord user, CancellationToken cancellationToken);
+    Task<UserSaveResult> AddAsync(UserRecord user, CancellationToken cancellationToken);
     Task UpdatePasswordAsync(Guid id, string passwordHash, CancellationToken cancellationToken);
 }
 

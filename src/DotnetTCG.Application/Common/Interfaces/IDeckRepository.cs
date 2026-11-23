@@ -9,5 +9,6 @@ public interface IDeckRepository
     Task<DeckEntry?> FindByOwnerAndNameAsync(Guid ownerId, string name, CancellationToken cancellationToken);
     Task AddAsync(DeckEntry deck, CancellationToken cancellationToken);
     Task UpdateAsync(DeckEntry deck, CancellationToken cancellationToken);
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    /// <summary>Devuelve false si el mazo está referenciado por una partida (FK).</summary>
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

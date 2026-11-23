@@ -92,6 +92,8 @@ public sealed class HubTests
             foreach (var hit in _messages.Where(m => m.Name == name).ToList())
                 _messages.TryTake(out _);
         }
+
+        public bool Has(string name) => _messages.Any(m => m.Name == name);
     }
 
     private static async Task<bool> DbAsync()
@@ -496,4 +498,95 @@ public sealed class HubTests
     private sealed record StateStatusView(int CurrentPlayerIndex, string Status);
     private sealed record SetupBoard(List<SetupCard>? Hand);
     private sealed record SetupCard(string Id, string Supertype, List<string> Subtypes);
+
+    [Fact]
+    public async Task LeaveLobby_AfterGameStarted_KeepsGameAlive()
+    {
+        // Regresión FE-001: el FE navega al tablero tras game-started y dispara
+        // LeaveLobby desde AMBOS jugadores; la partida no debe morir.
+        if (!await DbAsync())
+            return;
+        var token0 = await RegisterTokenAsync("ll0");
+        var token1 = await RegisterTokenAsync("ll1");
+        await SeedCatalogAsync();
+        var deck0 = await GoldenDeckAsync(token0);
+        var deck1 = await GoldenDeckAsync(token1);
+
+        var rest = Factory.CreateClient();
+        rest.DefaultRequestHeaders.Authorization = new("Bearer", token0);
+        var created = await rest.PostAsJsonAsync("/v1/games", new { isPublic = true });
+        created.EnsureSuccessStatusCode();
+        var gameId = (await created.Content.ReadFromJsonAsync<IdDto>())!.Id;
+
+        var c0 = new Collector();
+        var c1 = new Collector();
+        await using var h0 = await ConnectAsync(Factory, token0, c0);
+        await using var h1 = await ConnectAsync(Factory, token1, c1);
+
+        await h0.InvokeAsync("JoinLobby", gameId, null);
+        await c0.WaitForAsync("lobby");
+        await h1.InvokeAsync("JoinLobby", gameId, null);
+        await h0.InvokeAsync("SelectDeck", gameId, deck0);
+        await h1.InvokeAsync("SelectDeck", gameId, deck1);
+        await h0.InvokeAsync("SetReady", gameId, true);
+        await h1.InvokeAsync("SetReady", gameId, true); // auto-start del hub
+        await c0.WaitForAsync("game-started");
+
+        // Exactamente lo que hace el FE al destruir la página de lobby:
+        await h0.InvokeAsync("LeaveLobby", gameId);
+        await h1.InvokeAsync("LeaveLobby", gameId);
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.True(await db.Games.AnyAsync(g => g.Id == gameId), "la partida fue borrada");
+            Assert.Equal(2, await db.GamePlayers.CountAsync(p => p.GameId == gameId));
+        }
+
+        var state = await rest.GetAsync($"/v1/games/{gameId}/state");
+        Assert.Equal(HttpStatusCode.OK, state.StatusCode);
+    }
+
+    [Fact]
+    public async Task JoinAsSpectator_BeforeStart_JoinsGroup_ReceivesGameStarted()
+    {
+        // Regresión FE-003: con la partida aún en lobby (sin snapshot) el espectador
+        // recibía Game.NotFound y nunca entraba al grupo.
+        if (!await DbAsync())
+            return;
+        var token0 = await RegisterTokenAsync("sp0");
+        var token1 = await RegisterTokenAsync("sp1");
+        var specToken = await RegisterTokenAsync("spx");
+        await SeedCatalogAsync();
+        var deck0 = await GoldenDeckAsync(token0);
+        var deck1 = await GoldenDeckAsync(token1);
+
+        var rest = Factory.CreateClient();
+        rest.DefaultRequestHeaders.Authorization = new("Bearer", token0);
+        var created = await rest.PostAsJsonAsync("/v1/games",
+            new { isPublic = true, acceptsSpectators = true });
+        created.EnsureSuccessStatusCode();
+        var gameId = (await created.Content.ReadFromJsonAsync<IdDto>())!.Id;
+
+        var c0 = new Collector();
+        var cs = new Collector();
+        await using var h0 = await ConnectAsync(Factory, token0, c0);
+        await using var h1 = await ConnectAsync(Factory, token1, new Collector());
+        await using var hs = await ConnectAsync(Factory, specToken, cs);
+
+        await hs.InvokeAsync("JoinAsSpectator", gameId);
+        await Task.Delay(500);
+        Assert.False(cs.Has("error"), "JoinAsSpectator no debe fallar en lobby");
+
+        await h0.InvokeAsync("JoinLobby", gameId, null);
+        await c0.WaitForAsync("lobby");
+        await h1.InvokeAsync("JoinLobby", gameId, null);
+        await h0.InvokeAsync("SelectDeck", gameId, deck0);
+        await h1.InvokeAsync("SelectDeck", gameId, deck1);
+        await h0.InvokeAsync("SetReady", gameId, true);
+        await h1.InvokeAsync("SetReady", gameId, true);
+
+        await cs.WaitForAsync("game-started"); // entró al grupo
+        Assert.False(cs.Has("error"));
+    }
 }

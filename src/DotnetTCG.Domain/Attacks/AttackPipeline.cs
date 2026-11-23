@@ -40,22 +40,12 @@ public sealed class AttackPipeline(
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        context.BaseDamage = ParseBaseDamage(context.Attack.Damage);
-        context.Damage = behavior?.VariableDamage?.Invoke(new VariableDamageContext(
-            context.State,
-            context.ActingPlayerIndex,
-            context.Attacker,
-            context.Defender,
-            context.BaseDamage,
-            coinFlip,
-            random,
-            context.OptionalDiscardAccepted == true,
-            context.EnergiesToDiscard)) ?? context.BaseDamage;
+        ComputeDamage(context, behavior);
 
         if (behavior?.FlipToFail == true && !coinFlip.FlipHeads())
             return Fail(context, "Attack.FlipFail");
 
-        if (context.Attacker.TotalEnergyCount < context.Attack.Cost.Count)
+        if (!RuleValidator.CanPayCost(context.Attack.Cost, context.Attacker.AttachedEnergies))
             return Fail(context, "Attack.EnergyShort");
 
         if (context.Attacker.HasStatus(Status.Confused) && !coinFlip.FlipHeads())
@@ -70,7 +60,25 @@ public sealed class AttackPipeline(
     public AttackResult Resume(AttackContext context, AttackBehavior? behavior)
     {
         ArgumentNullException.ThrowIfNull(context);
+        // El contexto se reconstruye en el llamador: hay que recalcular el daño
+        // base y el variable con la decisión ya tomada (si no, el ataque hace 0).
+        ComputeDamage(context, behavior);
         return ContinueAfterPreChecks(context, behavior);
+    }
+
+    private void ComputeDamage(AttackContext context, AttackBehavior? behavior)
+    {
+        context.BaseDamage = ParseBaseDamage(context.Attack.Damage);
+        context.Damage = behavior?.VariableDamage?.Invoke(new VariableDamageContext(
+            context.State,
+            context.ActingPlayerIndex,
+            context.Attacker,
+            context.Defender,
+            context.BaseDamage,
+            coinFlip,
+            random,
+            context.OptionalDiscardAccepted == true,
+            context.EnergiesToDiscard)) ?? context.BaseDamage;
     }
 
     private AttackResult ContinueAfterPreChecks(AttackContext context, AttackBehavior? behavior)

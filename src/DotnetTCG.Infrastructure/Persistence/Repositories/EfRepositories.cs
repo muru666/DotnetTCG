@@ -6,6 +6,7 @@ using DotnetTCG.Infrastructure.Mapping;
 using DotnetTCG.Infrastructure.Persistence;
 using DotnetTCG.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace DotnetTCG.Infrastructure.Persistence.Repositories;
 
@@ -136,9 +137,18 @@ public sealed class EfDeckRepository(AppDbContext db) : IDeckRepository
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        await db.Decks.Where(d => d.Id == id).ExecuteDeleteAsync(cancellationToken);
+        try
+        {
+            await db.Decks.Where(d => d.Id == id).ExecuteDeleteAsync(cancellationToken);
+            return true;
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+        {
+            // El mazo está referenciado por game_players (partida en curso/lobby).
+            return false;
+        }
     }
 
     private static DeckEntry ToEntry(DeckEntity entity) => new(

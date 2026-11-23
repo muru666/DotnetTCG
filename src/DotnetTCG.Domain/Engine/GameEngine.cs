@@ -93,7 +93,7 @@ public sealed class GameEngine
         if (state.Status == GameStatus.Setup)
             return ExecuteSetup(state, action, events);
 
-        if (state.PendingChoice is not null)
+        if (state.PendingChoice is not null && action.Type is not GameActionType.Concede)
             return ExecutePending(state, action, events);
 
         if (action.PlayerIndex != state.CurrentPlayerIndex
@@ -167,6 +167,8 @@ public sealed class GameEngine
     private GameActionResult ExecutePending(GameState state, GameAction action, List<GameEvent> events)
     {
         var pending = state.PendingChoice!;
+        if (action.PlayerIndex != pending.PlayerIndex)
+            return new GameActionResult(false, "Choice.NotYours", pending, events);
         if (action.ChoiceId != pending.ChoiceId)
             return new GameActionResult(false, "Choice.Pending", pending, events);
 
@@ -261,7 +263,19 @@ public sealed class GameEngine
 
         var error = _attack.Handle(state, action, events);
         if (error is not null)
+        {
+            // Un ataque declarado que falló (moneda en cruz / confusión) consume el
+            // turno: si no, el jugador podría reintentarlo hasta que salga bien.
+            if (error is "Attack.FlipFail" or "Attack.ConfusedSelfHit")
+            {
+                _knockouts.Resolve(state, events);
+                CheckVictory(state, events);
+                if (state.Status != GameStatus.Finished)
+                    _turns.EndTurn(state, events);
+            }
+
             return error;
+        }
         if (state.PendingChoice is not null)
             return null;
 

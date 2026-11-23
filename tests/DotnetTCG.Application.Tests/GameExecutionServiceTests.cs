@@ -180,4 +180,19 @@ public sealed class GameExecutionServiceTests
 
         Assert.True(result.IsSuccess || result.Error!.Code == "Game.NoMulligan");
     }
+
+    [Fact]
+    public async Task ExecuteAction_ConflictOnFinalRetry_ReturnsConflictNotException()
+    {
+        // Regresión BUG-009: el conflicto del último intento escapaba como excepción
+        // (500) en vez de devolver Game.Conflict (409).
+        var h = await NewStartedGameAsync();
+        h.Games.ConflictCount = 10; // conflicto en los tres intentos
+
+        var result = await h.Execution.ExecuteActionAsync(
+            h.GameId, h.User0, new GameActionRequest(GameActionType.PassTurn), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Game.Conflict", result.Error.Code);
+    }
 }

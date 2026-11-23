@@ -71,6 +71,20 @@ public sealed class UserServiceTests
         Assert.Equal(Now.AddMinutes(60), result.Value!.ExpiresAt);
         Assert.Contains("ash", result.Value.AccessToken);
     }
+
+    [Fact]
+    public async Task Register_WhenUniqueIndexRace_ReturnsConflict()
+    {
+        // Regresión BUG-007: si dos registros simultáneos pasan el pre-chequeo, el
+        // índice único chocaba y el servicio respondía 500 en vez de 409.
+        var (service, users, _) = NewService();
+        users.ForcedSaveResult = UserSaveResult.UsernameTaken;
+
+        var result = await service.RegisterAsync("ash", "ash@x.test", "password1", CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("User.DuplicateUsername", result.Error.Code);
+    }
 }
 
 public sealed class RecoveryServiceTests

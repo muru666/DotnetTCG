@@ -182,7 +182,8 @@ public sealed class DeckService(
         var entry = await OwnedAsync(id, ownerId, cancellationToken);
         if (entry is null)
             return Result<bool>.Failure(new Error("Deck.NotFound", "Deck not found."));
-        await decks.DeleteAsync(id, cancellationToken);
+        if (!await decks.DeleteAsync(id, cancellationToken))
+            return Result<bool>.Failure(new Error("Deck.InUse", "Deck is used by a game."));
         return Result<bool>.Success(true);
     }
 

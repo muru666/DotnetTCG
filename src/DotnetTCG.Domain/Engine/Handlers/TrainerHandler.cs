@@ -72,6 +72,12 @@ public sealed class TrainerHandler(EngineServices services)
     private string? CreateChoice(GameState state, GameAction action, TrainerCard trainer, TrainerBehavior behavior)
     {
         var board = state.Players[action.PlayerIndex];
+
+        // Sin banca libre la elección no podría resolverse nunca (la banca no
+        // cambia mientras el pending esté abierto): se rechaza el juego ahora.
+        if (behavior.ChoiceKind == "max-revive" && board.Bench.Count >= PlayerBoard.MaxBenchSize)
+            return "Choice.BenchFull";
+
         List<ChoiceOption> options = behavior.ChoiceKind switch
         {
             "evosoda" => MatchingEvolutions(board)
@@ -119,7 +125,12 @@ public sealed class TrainerHandler(EngineServices services)
         };
 
         if (error is not null)
+        {
+            // Libera la elección: si no, el pending quedaría clavado para siempre
+            // (ninguna otra acción pasa por ExecutePending).
+            state.SetPendingChoice(null);
             return error;
+        }
 
         var trainer = board.Hand.OfType<TrainerCard>().FirstOrDefault(t => t.Name == pending.Context);
         if (trainer is not null)

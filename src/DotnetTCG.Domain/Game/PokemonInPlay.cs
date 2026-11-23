@@ -97,14 +97,16 @@ public sealed class PokemonInPlay
 
     public void RemoveExpiredModifiers(int currentTurn)
     {
+        // UntilNextTurn cubre el turno T (aplicación) y T+1 (turno del rival):
+        // expira recién al avanzar a T+2.
         _modifiers.RemoveAll(m =>
             m.Duration == ModifierDuration.OneUse ||
-            (m.Duration == ModifierDuration.UntilNextTurn && currentTurn > m.TurnApplied));
+            (m.Duration == ModifierDuration.UntilNextTurn && currentTurn > m.TurnApplied + 1));
     }
 
     public bool HasModifier(ModifierType type, int currentTurn)
         => _modifiers.Any(m => m.Type == type &&
-            (m.Duration != ModifierDuration.UntilNextTurn || currentTurn <= m.TurnApplied));
+            (m.Duration != ModifierDuration.UntilNextTurn || currentTurn <= m.TurnApplied + 1));
 
     public void EvolveInto(PokemonCard evolution)
     {

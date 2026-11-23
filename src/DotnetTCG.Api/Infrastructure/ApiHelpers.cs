@@ -30,7 +30,8 @@ public static class ErrorMapping
             return StatusCodes.Status403Forbidden;
         if (code.EndsWith("NotFound", StringComparison.Ordinal))
             return StatusCodes.Status404NotFound;
-        if (code is "Game.Conflict" or "Deck.DuplicateName" or "User.DuplicateUsername" or "User.DuplicateEmail")
+        if (code is "Game.Conflict" or "Deck.DuplicateName" or "Deck.InUse"
+            or "User.DuplicateUsername" or "User.DuplicateEmail")
             return StatusCodes.Status409Conflict;
         return StatusCodes.Status400BadRequest;
     }

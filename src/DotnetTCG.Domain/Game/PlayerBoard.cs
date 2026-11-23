@@ -272,13 +272,14 @@ public sealed class PlayerBoard
     }
 
     public bool ModifiersBlocked(ModifierType type, int currentTurn)
+        // Mismo criterio que PokemonInPlay: UntilNextTurn cubre T y T+1.
         => _modifiers.Any(m => m.Type == type &&
-            (m.Duration != ModifierDuration.UntilNextTurn || currentTurn <= m.TurnApplied));
+            (m.Duration != ModifierDuration.UntilNextTurn || currentTurn <= m.TurnApplied + 1));
 
     public void RemoveExpiredModifiers(int currentTurn)
     {
         _modifiers.RemoveAll(m =>
             m.Duration == ModifierDuration.OneUse ||
-            (m.Duration == ModifierDuration.UntilNextTurn && currentTurn > m.TurnApplied));
+            (m.Duration == ModifierDuration.UntilNextTurn && currentTurn > m.TurnApplied + 1));
     }
 }

@@ -153,9 +153,11 @@ public sealed class GameExecutionService(
             {
                 await games.UpdateAsync(updated, game.Version, cancellationToken);
             }
-            catch (ConcurrencyConflictException) when (attempt < MaxRetries - 1)
+            catch (ConcurrencyConflictException)
             {
-                continue;
+                if (attempt < MaxRetries - 1)
+                    continue;
+                return Fail("Game.Conflict", "Game changed concurrently. Retry.");
             }
 
             await logs.AppendAsync(gameId, state.TurnNumber, userId,
@@ -192,9 +194,11 @@ public sealed class GameExecutionService(
             {
                 await games.UpdateAsync(updated, game.Version, cancellationToken);
             }
-            catch (ConcurrencyConflictException) when (attempt == 0)
+            catch (ConcurrencyConflictException)
             {
-                continue;
+                if (attempt == 0)
+                    continue;
+                return Result<bool>.Failure(new Error("Game.Conflict", "Game changed. Retry."));
             }
 
             await logs.AppendAsync(gameId, 0, userId, "Mulligan", "Ok", cancellationToken);

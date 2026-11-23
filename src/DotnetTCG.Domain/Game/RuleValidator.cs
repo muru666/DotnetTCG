@@ -149,10 +149,65 @@ public sealed class RuleValidator
         if (active.HasModifier(ModifierType.CannotAttack, state.TurnNumber))
             return new Error("Attack.Blocked", "Active Pokemon cannot attack (effect).");
 
-        var required = attack.Cost.Count;
-        if (active.TotalEnergyCount < required)
+        if (!CanPayCost(attack.Cost, active.AttachedEnergies))
             return new Error("Attack.EnergyShort", "Active Pokemon lacks the Energy to attack.");
         return null;
+    }
+
+    /// <summary>
+    /// Pago del costo de ataque por TIPO de energía (no solo por cantidad):
+    /// cada entrada específica exige una energía de ese tipo (o Rainbow como comodín);
+    /// las entradas Colorless se pagan con cualquier energía restante
+    /// (Double Colorless aporta 2 unidades Colorless).
+    /// </summary>
+    public static bool CanPayCost(IReadOnlyList<PokemonType> cost, IReadOnlyList<EnergyCard> attached)
+    {
+        ArgumentNullException.ThrowIfNull(cost);
+        ArgumentNullException.ThrowIfNull(attached);
+
+        var typed = new Dictionary<PokemonType, int>();
+        var colorless = 0;
+        var wild = 0;
+        foreach (var energy in attached)
+        {
+            if (energy.Special == SpecialEnergyType.DoubleColorless)
+            {
+                colorless += 2;
+            }
+            else if (energy.Special == SpecialEnergyType.Rainbow)
+            {
+                wild++;
+            }
+            else if (energy.EnergyType == PokemonType.Colorless)
+            {
+                colorless += energy.EnergyValue;
+            }
+            else
+            {
+                typed[energy.EnergyType] = typed.GetValueOrDefault(energy.EnergyType) + energy.EnergyValue;
+            }
+        }
+
+        foreach (var entry in cost)
+        {
+            if (entry == PokemonType.Colorless)
+                continue;
+            if (typed.GetValueOrDefault(entry) > 0)
+            {
+                typed[entry]--;
+                continue;
+            }
+            if (wild > 0)
+            {
+                wild--;
+                continue;
+            }
+
+            return false;
+        }
+
+        var colorlessNeeded = cost.Count(e => e == PokemonType.Colorless);
+        return colorless + wild + typed.Values.Sum() >= colorlessNeeded;
     }
 
     public Error? CanUseAbility(GameState state, PokemonInPlay pokemon, string abilityName)

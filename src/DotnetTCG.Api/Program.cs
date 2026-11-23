@@ -1,10 +1,12 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using DotnetTCG.Application;
 using DotnetTCG.Application.Auth;
 using DotnetTCG.Application.Decks;
 using DotnetTCG.Api.Hubs;
+using DotnetTCG.Api.Infrastructure;
 using DotnetTCG.Infrastructure;
 using DotnetTCG.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -82,12 +84,19 @@ var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:AuthPer
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddFixedWindowLimiter("auth", limiter =>
-    {
-        limiter.PermitLimit = authPermitLimit;
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
-    });
+    // Participición por cliente: AddFixedWindowLimiter(...) particiona por PolicyNameKey
+    // (un bucket GLOBAL para todos los clientes), lo que permitía bloquear el login
+    // de todos los usuarios con 20 requests/min. Ver docs/AUDIT-2026-11.md (BUG-008).
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            ClientRateLimit.PartitionKey(context),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authPermitLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = false,
+            }));
 });
 
 var allowedOrigins = builder.Configuration

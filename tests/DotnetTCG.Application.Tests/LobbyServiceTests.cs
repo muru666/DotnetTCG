@@ -135,4 +135,49 @@ public sealed class LobbyServiceTests
         Assert.Equal(1, removed);
         Assert.Empty(kept);
     }
+
+    [Fact]
+    public async Task Join_AfterCreatorLeft_KeepsOrdersUnique()
+    {
+        // Regresión BUG-001: tras salir el creador (orden 0), el siguiente join
+        // asignaba Order=1 fijo y chocaba con el índice único (GameId, PlayerOrder).
+        var (service, _) = NewService();
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+        var c = Guid.NewGuid();
+        var created = await service.CreateAsync(a, true, true, null, CancellationToken.None);
+        var gameId = created.Value!.Id;
+        await service.JoinAsync(gameId, b, null, CancellationToken.None);
+
+        var left = await service.LeaveAsync(gameId, a, CancellationToken.None);
+        Assert.True(left.IsSuccess);
+
+        var joined = await service.JoinAsync(gameId, c, null, CancellationToken.None);
+
+        Assert.True(joined.IsSuccess, joined.Error?.Message);
+        Assert.Equal(new[] { 0, 1 }, joined.Value!.Players.Select(p => p.Order).OrderBy(o => o));
+    }
+
+    [Fact]
+    public async Task Leave_WhileGameStarted_Rejected()
+    {
+        // Regresión FE-001/BE: salir de una partida en curso no debe tocar Players
+        // (ni borrar la partida si quedaba sin jugadores).
+        var (service, games) = NewService();
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+        var created = await service.CreateAsync(a, true, true, null, CancellationToken.None);
+        var gameId = created.Value!.Id;
+        await service.JoinAsync(gameId, b, null, CancellationToken.None);
+
+        var game = await games.GetByIdAsync(gameId, CancellationToken.None);
+        await games.AddAsync(game! with { Status = GameStatus.InProgress }, CancellationToken.None);
+
+        var left = await service.LeaveAsync(gameId, a, CancellationToken.None);
+
+        Assert.True(left.IsFailure);
+        Assert.Equal("Game.NotJoinable", left.Error.Code);
+        var reloaded = await games.GetByIdAsync(gameId, CancellationToken.None);
+        Assert.Equal(2, reloaded!.Players.Count);
+    }
 }

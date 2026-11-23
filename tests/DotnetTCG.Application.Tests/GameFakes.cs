@@ -9,6 +9,9 @@ internal sealed class FakeGameRepository : IGameRepository
 
     public bool ThrowConflictOnce { get; set; }
 
+    /// <summary>Cantidad de conflictos seguidos a simular (para el último reintento).</summary>
+    public int ConflictCount { get; set; }
+
     public Task<GameData?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         => Task.FromResult(_games.GetValueOrDefault(id));
 
@@ -36,6 +39,12 @@ internal sealed class FakeGameRepository : IGameRepository
         if (ThrowConflictOnce)
         {
             ThrowConflictOnce = false;
+            throw new ConcurrencyConflictException();
+        }
+
+        if (ConflictCount > 0)
+        {
+            ConflictCount--;
             throw new ConcurrencyConflictException();
         }
 

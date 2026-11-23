@@ -49,7 +49,9 @@ public sealed class GameHub(
         if (userId is null)
             return;
         var result = await lobby.LeaveAsync(gameId, userId.Value, Context.ConnectionAborted);
-        if (result.IsFailure)
+        // En partida en curso no se toca Players (borraría/rompería la partida):
+        // el jugador sale igual del grupo y del tracker.
+        if (result.IsFailure && result.Error.Code != "Game.NotJoinable")
         {
             await SendError(result.Error);
             return;
@@ -57,7 +59,7 @@ public sealed class GameHub(
 
         tracker.Remove(Context.ConnectionId);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, Group(gameId));
-        if (!result.Value!.Deleted)
+        if (result.IsSuccess && !result.Value!.Deleted)
             await Clients.Group(Group(gameId)).SendAsync("lobby", result.Value.Lobby);
     }
 
@@ -210,17 +212,30 @@ public sealed class GameHub(
         var userId = RequireUser();
         if (userId is null)
             return;
-        var state = await execution.LoadGameStateAsync(gameId, userId.Value, Context.ConnectionAborted);
-        if (state.IsFailure)
+        // El lobby puede existir todavía sin snapshot (la partida no empezó):
+        // se valida contra el lobby y se entra al grupo ANTES de pedir el estado,
+        // para recibir el broadcast game-started.
+        var lobbyState = await lobby.GetAsync(gameId, Context.ConnectionAborted);
+        if (lobbyState.IsFailure)
         {
-            await SendError(state.Error);
+            await SendError(lobbyState.Error);
+            return;
+        }
+        if (!lobbyState.Value!.AcceptsSpectators)
+        {
+            await SendError(new Error("Game.NotFound", "Game not found."));
             return;
         }
 
         tracker.Add(Context.ConnectionId, userId.Value, gameId, spectator: true);
         await Groups.AddToGroupAsync(Context.ConnectionId, Group(gameId));
-        await Clients.Caller.SendAsync(
-            "game-state", StateProjector.Project(state.Value!, viewerOrder: null));
+
+        var state = await execution.LoadGameStateAsync(gameId, userId.Value, Context.ConnectionAborted);
+        if (state.IsSuccess)
+        {
+            await Clients.Caller.SendAsync(
+                "game-state", StateProjector.Project(state.Value!, viewerOrder: null));
+        }
     }
 
     public async Task SendChat(Guid gameId, string text)

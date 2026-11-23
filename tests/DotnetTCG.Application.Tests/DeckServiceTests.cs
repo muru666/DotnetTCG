@@ -208,4 +208,20 @@ public sealed class DeckServiceTests
         Assert.True(fixed_.IsValid);
         Assert.Equal(2, (await decks.ListByOwnerAsync(onlyInvalid, CancellationToken.None)).Count);
     }
+
+    [Fact]
+    public async Task Delete_DeckInUse_Fails()
+    {
+        // Regresión BUG-002: borrar un mazo referenciado por game_players chocaba
+        // con la FK (500); ahora es un error de negocio Deck.InUse (409).
+        var (service, decks) = NewService();
+        var owner = Guid.NewGuid();
+        var created = await service.CreateAsync(owner, "Mine", CancellationToken.None);
+        decks.DeleteBlocked = true;
+
+        var result = await service.DeleteAsync(created.Value!.Id, owner, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Deck.InUse", result.Error.Code);
+    }
 }

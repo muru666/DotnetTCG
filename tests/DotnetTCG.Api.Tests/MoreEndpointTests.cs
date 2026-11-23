@@ -392,4 +392,82 @@ public sealed class MoreEndpointTests
         (await client.PostAsJsonAsync($"/v1/decks/{deckId}/validate", new { })).EnsureSuccessStatusCode();
         return deckId;
     }
+
+    // ------------------------------------- regresiones de la auditoría 2026-11
+
+    [Fact]
+    public async Task Deck_CreateNameTooLong_400()
+    {
+        // BUG-003: el validador existía pero nunca se inyectaba (500 por varchar(100)).
+        if (!await DbAsync())
+            return;
+        var client = await RegisterAsync(Unique("ln"));
+
+        var response = await client.PostAsJsonAsync("/v1/decks", new { name = new string('N', 150) });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Deck_RenameNameTooLong_400()
+    {
+        // BUG-003: RenameDeckRequest ni siquiera tenía validador.
+        if (!await DbAsync())
+            return;
+        var client = await RegisterAsync(Unique("rn"));
+        var created = await client.PostAsJsonAsync("/v1/decks", new { name = Unique("D") });
+        var deckId = (await created.Content.ReadFromJsonAsync<DeckIdDto>())!.Id;
+
+        var response = await client.PutAsJsonAsync($"/v1/decks/{deckId}", new { name = new string('N', 150) });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cards_PageOverflow_400()
+    {
+        // BUG-004: page*pageSize desbordaba int y el backend respondía 500.
+        if (!await DbAsync())
+            return;
+        var client = await RegisterAsync(Unique("pg"));
+
+        var response = await client.GetAsync("/v1/cards?page=30000000&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Deck_DeleteWhileSelectedInLobby_409()
+    {
+        // BUG-002: la FK de game_players convertía el delete en 500.
+        if (!await DbAsync())
+            return;
+        await SeedMinimalCatalogAsync();
+        var client = await RegisterAsync(Unique("del"));
+        var deckId = await GoldenDeckAsync(client, Unique("D"));
+        var created = await client.PostAsJsonAsync("/v1/games", new { isPublic = true });
+        var gameId = (await created.Content.ReadFromJsonAsync<DeckIdDto>())!.Id;
+        await client.PostAsJsonAsync($"/v1/games/{gameId}/deck", new { deckId });
+
+        var response = await client.DeleteAsync($"/v1/decks/{deckId}");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Register_ConcurrentDuplicate_One201_Two409()
+    {
+        // BUG-007: la carrera del índice único respondía 500 en vez de 409.
+        if (!await DbAsync())
+            return;
+        var client = Factory.CreateClient();
+        var username = Unique("race");
+        Task<HttpResponseMessage> Register() => client.PostAsJsonAsync("/v1/auth/register",
+            new { username, email = $"{Guid.NewGuid():N}@x.test", password = "password1" });
+
+        var results = await Task.WhenAll(Register(), Register(), Register());
+
+        Assert.Equal(1, results.Count(r => r.StatusCode == HttpStatusCode.Created));
+        Assert.Equal(2, results.Count(r => r.StatusCode == HttpStatusCode.Conflict));
+    }
 }
