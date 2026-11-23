@@ -51,6 +51,8 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
   private readonly currentUserId = this.authService.getUserId();
   private hubSubs?: Subscription;
   private joinPassword: string | null = null;
+  /** true cuando la página navega al tablero: en ese caso NO hay que salir del lobby. */
+  private navigatedToGame = false;
 
   protected readonly myPlayer = computed(() => {
     const state = this.lobbyState();
@@ -88,7 +90,9 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.hubSubs?.unsubscribe();
-    if (!this.isSpectator()) {
+    // Al recibir game-started esta página navega al tablero y se destruye: ahí NO
+    // hay que invocar LeaveLobby (borraría la partida recién iniciada).
+    if (!this.isSpectator() && !this.navigatedToGame) {
       const id = this.gameId();
       if (id) void this.signalService.leaveLobby(id).catch(() => {});
     }
@@ -107,6 +111,7 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
   }
 
   private navigateToGame(gameId: string): void {
+    this.navigatedToGame = true;
     if (this.isSpectator()) {
       this.router.navigate(['/game', 'spectator', gameId]);
     } else {

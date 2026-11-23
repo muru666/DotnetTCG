@@ -104,47 +104,56 @@ export class GameSignalService {
     return this.connection;
   }
 
-  joinLobby(gameId: string, password?: string | null): Promise<void> {
+  // Los métodos son `async` a propósito: `requireConnection()` lanza, y dentro de
+  // un método async eso se convierte en una promesa rechazada que el `.catch` del
+  // llamador sí recibe (con un método síncrono el throw escapaba y, en executeAction,
+  // dejaba `isLoading` clavado en true = overlay de carga eterno). Ver AUDIT-2026-11.
+  async joinLobby(gameId: string, password?: string | null): Promise<void> {
     return this.requireConnection().invoke('JoinLobby', gameId, password ?? null);
   }
 
-  leaveLobby(gameId: string): Promise<void> {
+  async leaveLobby(gameId: string): Promise<void> {
     return this.requireConnection().invoke('LeaveLobby', gameId);
   }
 
-  selectDeck(gameId: string, deckId: string): Promise<void> {
+  async selectDeck(gameId: string, deckId: string): Promise<void> {
     return this.requireConnection().invoke('SelectDeck', gameId, deckId);
   }
 
-  setReady(gameId: string, ready: boolean): Promise<void> {
+  async setReady(gameId: string, ready: boolean): Promise<void> {
     return this.requireConnection().invoke('SetReady', gameId, ready);
   }
 
-  startGame(gameId: string): Promise<void> {
+  async startGame(gameId: string): Promise<void> {
     return this.requireConnection().invoke('StartGame', gameId);
   }
 
-  executeAction(gameId: string, request: HubGameActionRequest): Promise<void> {
+  async executeAction(gameId: string, request: HubGameActionRequest): Promise<void> {
     return this.requireConnection().invoke('ExecuteAction', gameId, request);
   }
 
-  mulligan(gameId: string): Promise<void> {
+  async mulligan(gameId: string): Promise<void> {
     return this.requireConnection().invoke('Mulligan', gameId);
   }
 
-  pauseGame(gameId: string): Promise<void> {
+  async pauseGame(gameId: string): Promise<void> {
     return this.requireConnection().invoke('PauseGame', gameId);
   }
 
-  reconnect(gameId: string): Promise<void> {
+  async reconnect(gameId: string): Promise<void> {
+    // Si la conexión murió, primero hay que reconectar (antes el botón
+    // "Reconectar" lanzaba sin volver a conectar nunca).
+    if (!this.connection) {
+      await this.connect();
+    }
     return this.requireConnection().invoke('Reconnect', gameId);
   }
 
-  joinAsSpectator(gameId: string): Promise<void> {
+  async joinAsSpectator(gameId: string): Promise<void> {
     return this.requireConnection().invoke('JoinAsSpectator', gameId);
   }
 
-  sendChat(gameId: string, text: string): Promise<void> {
+  async sendChat(gameId: string, text: string): Promise<void> {
     return this.requireConnection().invoke('SendChat', gameId, text);
   }
 }
