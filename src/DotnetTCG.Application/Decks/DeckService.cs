@@ -260,10 +260,8 @@ public sealed class DeckService(
 
         errors.AddRange(rules.ValidateDeck(domainCards).Select(e => e.Message));
 
-        var aceSpec = domainCards.OfType<TrainerCard>()
-            .Count(t => t.TrainerSubtype == SubType.AceSpec);
-        if (aceSpec > 1)
-            errors.Add("At most one ACE SPEC card per deck.");
+        // La regla ACE SPEC ≤1 vive en RuleValidator.ValidateDeck (Dominio):
+        // NewGame la valida igual al iniciar la partida.
 
         var valid = errors.Count == 0;
         await decks.UpdateAsync(entry with { IsValid = valid }, cancellationToken);

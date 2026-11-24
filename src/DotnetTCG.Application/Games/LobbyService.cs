@@ -11,6 +11,7 @@ public sealed record LobbyDto(
     Guid CreatorId,
     bool IsPublic,
     bool AcceptsSpectators,
+    bool HasPassword,
     IReadOnlyList<LobbyPlayerDto> Players);
 
 public sealed record LeaveResult(bool Deleted, LobbyDto? Lobby);
@@ -255,5 +256,8 @@ public sealed class LobbyService(
         game.CreatorId,
         game.IsPublic,
         game.AcceptsSpectators,
+        // El FE debe decidir si pide password por esto, no por IsPublic
+        // (hay lobbies privados sin password y públicos con hash residual).
+        game.PasswordHash is not null,
         game.Players.Select(p => new LobbyPlayerDto(p.UserId, p.Order, p.DeckId, p.IsReady, p.Username)).ToList());
 }

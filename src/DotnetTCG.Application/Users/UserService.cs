@@ -46,7 +46,10 @@ public sealed class UserService(
     public async Task<Result<AuthTokenDto>> LoginAsync(
         string username, string password, int accessTokenMinutes, CancellationToken cancellationToken)
     {
-        var record = await users.FindByUsernameAsync(username.Trim(), cancellationToken);
+        // Acepta usuario O email (el formulario lo promete como "Usuario o Email").
+        var identifier = username.Trim();
+        var record = await users.FindByUsernameAsync(identifier, cancellationToken)
+            ?? await users.FindByEmailAsync(identifier.ToLowerInvariant(), cancellationToken);
         if (record is null || !hasher.Verify(password, record.PasswordHash))
             return Result<AuthTokenDto>.Failure(new Error("Auth.Unauthorized", "Invalid credentials."));
 

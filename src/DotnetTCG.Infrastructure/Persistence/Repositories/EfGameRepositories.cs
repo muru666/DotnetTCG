@@ -73,6 +73,9 @@ public sealed class EfGameRepository(AppDbContext db) : IGameRepository
         db.Games.Attach(scalars);
         db.Entry(scalars).OriginalValues[nameof(GameEntity.Version)] = expectedVersion;
         db.Entry(scalars).State = EntityState.Modified;
+        // ToEntity pone CreatedAt = UpdatedAt para el alta; en updates eso pisaría
+        // la fecha real de creación (AUDIT-2026-11 BUG-005).
+        db.Entry(scalars).Property(g => g.CreatedAt).IsModified = false;
         try
         {
             await db.SaveChangesAsync(cancellationToken);

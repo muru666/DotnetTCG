@@ -9,7 +9,7 @@ public sealed class AuthInfraTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 8, 0, 0, 0, TimeSpan.Zero);
 
-    [Fact]
+    [SkippableFact]
     public void BCrypt_RoundTrip()
     {
         var hasher = new BCryptPasswordHasher();
@@ -21,7 +21,7 @@ public sealed class AuthInfraTests
         Assert.False(hasher.Verify("password1", "not-a-hash"));
     }
 
-    [Fact]
+    [SkippableFact]
     public void JwtToken_CarriesExpectedClaims()
     {
         var service = new JwtTokenService(Options.Create(new JwtOptions

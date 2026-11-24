@@ -74,6 +74,13 @@ public sealed class PokemonInPlay
     {
         var tool = AttachedTool;
         AttachedTool = null;
+        if (tool is not null)
+        {
+            // Los modificadores de la herramienta (p. ej. +20 de Muscle Band)
+            // mueren con ella: si no, Joust rompía la carta y el buff quedaba.
+            _modifiers.RemoveAll(m => m.Source == tool.Name);
+        }
+
         return tool;
     }
 

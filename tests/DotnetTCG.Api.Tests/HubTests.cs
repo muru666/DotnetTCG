@@ -38,12 +38,14 @@ public sealed class HubTests
                     payload => _messages.Add((name, payload, Stopwatch.GetTimestamp())));
         }
 
-        public async Task<JsonElement> WaitForAsync(string name, int timeoutMs = 8000)
+        public async Task<JsonElement> WaitForAsync(
+            string name, int timeoutMs = 8000, Func<JsonElement, bool>? predicate = null)
         {
             var sw = Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < timeoutMs)
             {
-                var hit = _messages.FirstOrDefault(m => m.Name == name);
+                var hit = _messages.FirstOrDefault(m =>
+                    m.Name == name && (predicate is null || predicate(m.Payload)));
                 if (!hit.Equals(default((string, JsonElement, long))))
                     return hit.Payload;
                 await Task.Delay(100);
@@ -106,7 +108,7 @@ public sealed class HubTests
         }
         catch
         {
-            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
+            Skip.If(true, "Postgres de test no disponible (Docker).");
             return false;
         }
     }
@@ -139,7 +141,7 @@ public sealed class HubTests
         return connection;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Connect_WithoutToken_Rejected()
     {
         if (!await DbAsync())
@@ -153,7 +155,7 @@ public sealed class HubTests
             await Assert.ThrowsAnyAsync<Exception>(() => connection.StartAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FullFlow_MembersAndSpectator_NoLeak()
     {
         if (!await DbAsync())
@@ -235,7 +237,7 @@ public sealed class HubTests
         Assert.Equal("gl hf", chatS.GetProperty("text").GetString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task NonMember_Action_RejectedWithoutStateChange()
     {
         if (!await DbAsync())
@@ -259,7 +261,7 @@ public sealed class HubTests
         Assert.Equal("Game.NotFound", error.GetProperty("code").GetString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Disconnect_PausesGameAfterGrace()
     {
         if (!await DbAsync())
@@ -317,7 +319,7 @@ public sealed class HubTests
         Assert.Contains("Game.Paused", await blocked.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Lobby_HiddenUntilCreatorConnected()
     {
         if (!await DbAsync())
@@ -349,7 +351,7 @@ public sealed class HubTests
         Assert.Empty(gone!);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Disconnect_RemovesPlayerFromLobbyAfterGrace()
     {
         if (!await DbAsync())
@@ -386,8 +388,10 @@ public sealed class HubTests
                && deadline.Elapsed < TimeSpan.FromSeconds(10))
             await Task.Delay(200);
         fakeTime.Advance(TimeSpan.FromSeconds(16));
-        // El creador recibe el lobby actualizado por push...
-        var updated = await c0.WaitForAsync("lobby");
+        // El creador recibe el lobby actualizado por push... (puede colarse el
+        // broadcast stale del join anterior con 2 jugadores: esperar el de 1).
+        var updated = await c0.WaitForAsync("lobby",
+            predicate: m => m.GetProperty("players").GetArrayLength() == 1);
         Assert.Equal(1, updated.GetProperty("players").GetArrayLength());
         // ...y por REST el invitado ya no esta.
         rest.DefaultRequestHeaders.Authorization = new("Bearer", token0);
@@ -499,7 +503,7 @@ public sealed class HubTests
     private sealed record SetupBoard(List<SetupCard>? Hand);
     private sealed record SetupCard(string Id, string Supertype, List<string> Subtypes);
 
-    [Fact]
+    [SkippableFact]
     public async Task LeaveLobby_AfterGameStarted_KeepsGameAlive()
     {
         // Regresión FE-001: el FE navega al tablero tras game-started y dispara
@@ -547,7 +551,7 @@ public sealed class HubTests
         Assert.Equal(HttpStatusCode.OK, state.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task JoinAsSpectator_BeforeStart_JoinsGroup_ReceivesGameStarted()
     {
         // Regresión FE-003: con la partida aún en lobby (sin snapshot) el espectador

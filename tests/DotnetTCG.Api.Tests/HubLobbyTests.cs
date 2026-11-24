@@ -59,7 +59,7 @@ public sealed class HubLobbyTests
         }
         catch
         {
-            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
+            Skip.If(true, "Postgres de test no disponible (Docker).");
             return false;
         }
     }
@@ -119,7 +119,7 @@ public sealed class HubLobbyTests
         return id;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task LobbyLifecycle_ViaHub()
     {
         if (!await DbAsync())
@@ -169,7 +169,7 @@ public sealed class HubLobbyTests
         await h1.InvokeAsync("LeaveLobby", gameId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Spectator_PrivateGame_Rejected()
     {
         if (!await DbAsync())
@@ -191,7 +191,7 @@ public sealed class HubLobbyTests
         Assert.Equal("Game.NotFound", error.GetProperty("code").GetString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Chat_EmptyMessage_Rejected()
     {
         if (!await DbAsync())

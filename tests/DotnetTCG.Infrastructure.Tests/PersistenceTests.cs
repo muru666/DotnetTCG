@@ -28,7 +28,7 @@ internal static class TestPostgres
         catch
         {
             await db.DisposeAsync();
-            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
+            Skip.If(true, "Postgres de test no disponible (Docker).");
             return null;
         }
 
@@ -38,7 +38,7 @@ internal static class TestPostgres
 
 public sealed class CardMapperTests
 {
-    [Fact]
+    [SkippableFact]
     public void RoundTrip_Pokemon_PreservesData()
     {
         var card = new PokemonCard("xy1-1", "Venusaur-EX", [SubType.Basic, SubType.Ex], [],
@@ -63,7 +63,7 @@ public sealed class CardMapperTests
     private static string Json<T>(IReadOnlyList<T> value)
         => System.Text.Json.JsonSerializer.Serialize(value);
 
-    [Fact]
+    [SkippableFact]
     public void RoundTrip_Energy_PreservesSpecial()
     {
         var card = new EnergyCard("xy1-130", "Double Colorless Energy", [SubType.Item], [],
@@ -79,7 +79,7 @@ public sealed class CardMapperTests
 }
 
 public sealed class EfRepositoryTests
-{    [Fact]
+{    [SkippableFact]
     public async Task Cards_UpsertAndSearch_RoundTrips()
     {
         // Postgres no disponible (sin Docker): se omite.
@@ -103,7 +103,7 @@ public sealed class EfRepositoryTests
         Assert.Equal(1, await repo.CountBySetAsync("zset", CancellationToken.None));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_SearchByType_Filters()
     {
         if (await TestPostgres.TryOpenAsync() is not (var db, var tx))
@@ -134,7 +134,7 @@ public sealed class EfRepositoryTests
         Assert.True(await repo.CountAsync(null, null, null, CancellationToken.None) >= 2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Decks_CRUD_WithOwnership()
     {
         // Postgres no disponible (sin Docker): se omite.
@@ -171,7 +171,7 @@ public sealed class EfRepositoryTests
         Assert.Null(missing);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Users_RegisterAndRecoveryToken_RoundTrip()
     {
         // Postgres no disponible (sin Docker): se omite.

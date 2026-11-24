@@ -28,7 +28,7 @@ public sealed class MoreEndpointTests
         }
         catch
         {
-            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
+            Skip.If(true, "Postgres de test no disponible (Docker).");
             return false;
         }
     }
@@ -50,7 +50,7 @@ public sealed class MoreEndpointTests
 
     private static string Unique(string prefix) => $"{prefix}{Guid.NewGuid():N}"[..24];
 
-    [Fact]
+    [SkippableFact]
     public async Task Register_DuplicateUsername_409()
     {
         if (!await DbAsync())
@@ -67,7 +67,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Register_InvalidBody_400()
     {
         if (!await DbAsync())
@@ -80,7 +80,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Login_InvalidBody_400()
     {
         if (!await DbAsync())
@@ -92,7 +92,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Recovery_FullCycle_ResetPassword()
     {
         if (!await DbAsync())
@@ -144,7 +144,7 @@ public sealed class MoreEndpointTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Recovery_RequestUnknownEmail_Still200()
     {
         if (!await DbAsync())
@@ -157,7 +157,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Recovery_ValidateGarbage_False()
     {
         if (!await DbAsync())
@@ -171,7 +171,7 @@ public sealed class MoreEndpointTests
         Assert.Contains("\"valid\":false", await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_GetRenameDelete_Flow()
     {
         if (!await DbAsync())
@@ -195,7 +195,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, afterDelete.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_CardQuantityFlow()
     {
         if (!await DbAsync())
@@ -229,7 +229,7 @@ public sealed class MoreEndpointTests
         Assert.DoesNotContain("qty-e", body);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_CreateDuplicate_409()
     {
         if (!await DbAsync())
@@ -243,7 +243,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_GetById_200And404()
     {
         if (!await DbAsync())
@@ -264,7 +264,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_LobbyEndpoints_Flow()
     {
         if (!await DbAsync())
@@ -310,7 +310,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, missingLobby.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_StartWithReadyDecks_ThenLogsAndState()
     {
         if (!await DbAsync())
@@ -395,7 +395,7 @@ public sealed class MoreEndpointTests
 
     // ------------------------------------- regresiones de la auditoría 2026-11
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_CreateNameTooLong_400()
     {
         // BUG-003: el validador existía pero nunca se inyectaba (500 por varchar(100)).
@@ -408,7 +408,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_RenameNameTooLong_400()
     {
         // BUG-003: RenameDeckRequest ni siquiera tenía validador.
@@ -423,7 +423,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_PageOverflow_400()
     {
         // BUG-004: page*pageSize desbordaba int y el backend respondía 500.
@@ -436,7 +436,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_DeleteWhileSelectedInLobby_409()
     {
         // BUG-002: la FK de game_players convertía el delete en 500.
@@ -454,7 +454,7 @@ public sealed class MoreEndpointTests
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Register_ConcurrentDuplicate_One201_Two409()
     {
         // BUG-007: la carrera del índice único respondía 500 en vez de 409.
@@ -469,5 +469,51 @@ public sealed class MoreEndpointTests
 
         Assert.Equal(1, results.Count(r => r.StatusCode == HttpStatusCode.Created));
         Assert.Equal(2, results.Count(r => r.StatusCode == HttpStatusCode.Conflict));
+    }
+
+    [SkippableFact]
+    public async Task Login_WithEmail_ReturnsToken()
+    {
+        // FE-006: el formulario promete "Usuario o Email" y el backend solo
+        // buscaba por username.
+        if (!await DbAsync())
+            return;
+        var client = Factory.CreateClient();
+        var username = Unique("em");
+        var email = $"{username}@x.test";
+        (await client.PostAsJsonAsync("/v1/auth/register",
+            new { username, email, password = "password1" })).EnsureSuccessStatusCode();
+
+        var login = await client.PostAsJsonAsync("/v1/auth/login",
+            new { username = email, password = "password1" });
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var body = await login.Content.ReadAsStringAsync();
+        Assert.Contains("accessToken", body);
+    }
+
+    [SkippableFact]
+    public async Task Lobby_HasPassword_ReflectsSettings()
+    {
+        // FE-004: el FE debe decidir si pide password por hasPassword, no por
+        // isPublic (y '' limpia el hash al volver a público).
+        if (!await DbAsync())
+            return;
+        var client = await RegisterAsync(Unique("hp"));
+        var created = await client.PostAsJsonAsync("/v1/games",
+            new { isPublic = true, acceptsSpectators = true, password = "secreto" });
+        var gameId = (await created.Content.ReadFromJsonAsync<DeckIdDto>())!.Id;
+
+        var withPwd = await client.GetFromJsonAsync<System.Text.Json.JsonElement>(
+            $"/v1/games/{gameId}/lobby");
+        Assert.True(withPwd.GetProperty("hasPassword").GetBoolean());
+
+        var cleared = await client.PutAsJsonAsync($"/v1/games/{gameId}/settings",
+            new { isPublic = true, acceptsSpectators = true, password = "" });
+        cleared.EnsureSuccessStatusCode();
+
+        var withoutPwd = await client.GetFromJsonAsync<System.Text.Json.JsonElement>(
+            $"/v1/games/{gameId}/lobby");
+        Assert.False(withoutPwd.GetProperty("hasPassword").GetBoolean());
     }
 }

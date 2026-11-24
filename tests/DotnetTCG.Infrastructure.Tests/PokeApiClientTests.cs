@@ -46,7 +46,7 @@ public sealed class PokeApiClientTests
         }
         """;
 
-    [Fact]
+    [SkippableFact]
     public async Task FetchSet_MapsAllSupertypes()
     {
         var http = new HttpClient(new StubHandler(PageJson)) { BaseAddress = new Uri("https://x/") };

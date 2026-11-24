@@ -57,7 +57,7 @@ public sealed class PokeApiClientResilienceTests
             Options.Create(new PokeApiOptions { ApiKey = apiKey }),
             NullLogger<PokeApiClient>.Instance);
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_RetriesOn500_ThenSucceeds()
     {
         var handler = new SequenceHandler(
@@ -70,7 +70,7 @@ public sealed class PokeApiClientResilienceTests
         Assert.Single(cards);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_PersistentFailure_ThrowsAfterThreeAttempts()
     {
         var handler = new SequenceHandler(
@@ -80,7 +80,7 @@ public sealed class PokeApiClientResilienceTests
             Client(handler).FetchSetAsync("xy1", CancellationToken.None));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_PaginatesUntilTotalCount()
     {
         var handler = new SequenceHandler(
@@ -98,7 +98,7 @@ public sealed class PokeApiClientResilienceTests
         Assert.Equal(300, cards.Count);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_WithApiKey_SendsHeader()
     {
         string? seenKey = null;
@@ -116,7 +116,7 @@ public sealed class PokeApiClientResilienceTests
         Assert.Equal("secret-key", seenKey);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_NoData_DoesNotLoop()
     {
         var handler = new SequenceHandler(
@@ -127,7 +127,7 @@ public sealed class PokeApiClientResilienceTests
         Assert.Empty(cards);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_MapsWeaknessesResistancesAndRules()
     {
         const string json = """
@@ -167,7 +167,7 @@ public sealed class PokeApiClientResilienceTests
         Assert.Equal(SpecialEnergyType.Rainbow, rainbow.Special);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Fetch_UnknownSupertype_Throws()
     {
         const string json = """
@@ -193,7 +193,7 @@ internal sealed class DelegateHandler(Func<HttpRequestMessage, HttpResponseMessa
 
 public sealed class SmtpEmailSenderTests
 {
-    [Fact]
+    [SkippableFact]
     public async Task Send_WithoutSmtpConfig_ThrowsFast()
     {
         var sender = new SmtpEmailSender(
@@ -209,7 +209,7 @@ public sealed class SmtpEmailSenderTests
 
 public sealed class InfrastructureDependencyInjectionTests
 {
-    [Fact]
+    [SkippableFact]
     public void AddInfrastructure_WithoutConnectionString_Throws()
     {
         var services = new ServiceCollection();
@@ -218,7 +218,7 @@ public sealed class InfrastructureDependencyInjectionTests
         Assert.Throws<InvalidOperationException>(() => services.AddInfrastructure(config));
     }
 
-    [Fact]
+    [SkippableFact]
     public void AddInfrastructure_WithConnectionString_RegistersCoreServices()
     {
         var services = new ServiceCollection();

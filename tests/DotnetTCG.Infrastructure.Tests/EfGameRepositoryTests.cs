@@ -36,7 +36,7 @@ public sealed class EfGameRepositoryTests
         [new GamePlayerData(creatorId, 0, null, false)],
         DateTimeOffset.UtcNow);
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_AddGetUpdateDelete_RoundTrip()
     {
         if (await OpenOrSkipAsync() is not (var db, var tx))
@@ -75,7 +75,7 @@ public sealed class EfGameRepositoryTests
         Assert.Null(await repo.GetByIdAsync(game.Id, CancellationToken.None));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_Update_WithStaleVersion_ThrowsConflict()
     {
         if (await OpenOrSkipAsync() is not (var db, var tx))
@@ -96,7 +96,33 @@ public sealed class EfGameRepositoryTests
                 loaded.Version, CancellationToken.None));
     }
 
-    [Fact]
+    [SkippableFact]
+    public async Task Games_Update_PreservesCreatedAt()
+    {
+        // Regresión BUG-005: UpdateAsync pisaba CreatedAt con UpdatedAt.
+        if (await OpenOrSkipAsync() is not (var db, var tx))
+            return;
+        await using var _ = db;
+        await using var _tx = tx;
+        var repo = new EfGameRepository(db);
+        var creator = await NewUserAsync(db);
+        var game = NewLobby(creator.Id);
+        await repo.AddAsync(game, CancellationToken.None);
+
+        var created = await db.Games.AsNoTracking().FirstAsync(g => g.Id == game.Id);
+        var createdAt = created.CreatedAt;
+        var later = createdAt.AddMinutes(5);
+
+        var loaded = await repo.GetByIdAsync(game.Id, CancellationToken.None);
+        await repo.UpdateAsync(loaded! with { Status = GameStatus.Setup, UpdatedAt = later },
+            loaded.Version, CancellationToken.None);
+
+        var after = await db.Games.AsNoTracking().FirstAsync(g => g.Id == game.Id);
+        Assert.Equal(createdAt, after.CreatedAt);
+        Assert.Equal(later, after.UpdatedAt);
+    }
+
+    [SkippableFact]
     public async Task Games_Update_SyncsPlayerSet()
     {
         if (await OpenOrSkipAsync() is not (var db, var tx))
@@ -121,7 +147,7 @@ public sealed class EfGameRepositoryTests
         Assert.Equal(joiner.Id, reloaded.Players[0].UserId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_ResumableAndActive_FiltersByUser()
     {
         if (await OpenOrSkipAsync() is not (var db, var tx))
@@ -146,7 +172,7 @@ public sealed class EfGameRepositoryTests
         Assert.NotNull(active);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GameLogs_AppendAndList_OrdersById()
     {
         if (await OpenOrSkipAsync() is not (var db, var tx))
@@ -168,7 +194,7 @@ public sealed class EfGameRepositoryTests
         Assert.Equal("Attack", logs[1].Action);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GameLogs_UnknownGame_ReturnsEmpty()
     {
         if (await OpenOrSkipAsync() is not (var db, var tx))

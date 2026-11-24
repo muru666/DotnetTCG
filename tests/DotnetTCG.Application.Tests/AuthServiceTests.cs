@@ -85,6 +85,30 @@ public sealed class UserServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal("User.DuplicateUsername", result.Error.Code);
     }
+
+    [Fact]
+    public async Task Login_WithEmail_Succeeds()
+    {
+        // FE-006: el login acepta usuario o email.
+        var (service, _, _) = NewService();
+        await service.RegisterAsync("ash", "ash@x.test", "password1", CancellationToken.None);
+
+        var result = await service.LoginAsync("ash@x.test", "password1", 60, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Contains("ash", result.Value!.AccessToken);
+    }
+
+    [Fact]
+    public async Task Login_WithWrongEmail_Unauthorized()
+    {
+        var (service, _, _) = NewService();
+        await service.RegisterAsync("ash", "ash@x.test", "password1", CancellationToken.None);
+
+        var result = await service.LoginAsync("mistake@x.test", "password1", 60, CancellationToken.None);
+
+        Assert.Equal("Auth.Unauthorized", result.Error.Code);
+    }
 }
 
 public sealed class RecoveryServiceTests

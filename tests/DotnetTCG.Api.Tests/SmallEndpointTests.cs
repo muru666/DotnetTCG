@@ -23,7 +23,7 @@ public sealed class SmallEndpointTests
         }
         catch
         {
-            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
+            Skip.If(true, "Postgres de test no disponible (Docker).");
             return false;
         }
     }
@@ -43,7 +43,7 @@ public sealed class SmallEndpointTests
         return client;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_UnknownType_400()
     {
         if (!await DbAsync())
@@ -55,7 +55,7 @@ public sealed class SmallEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_SupertypeFilter_200OnlyMatching()
     {
         if (!await DbAsync())
@@ -72,7 +72,7 @@ public sealed class SmallEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_EmptySearch_200EmptyPage()
     {
         if (!await DbAsync())
@@ -85,7 +85,7 @@ public sealed class SmallEndpointTests
         Assert.Contains("\"total\":0", await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Decks_List_ReturnsArray()
     {
         if (!await DbAsync())
@@ -100,7 +100,7 @@ public sealed class SmallEndpointTests
         Assert.NotEmpty(await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_MissingGameEndpoints_404()
     {
         if (!await DbAsync())
@@ -124,7 +124,7 @@ public sealed class SmallEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, mulligan.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Games_UnknownActionType_400()
     {
         if (!await DbAsync())
@@ -140,7 +140,7 @@ public sealed class SmallEndpointTests
         Assert.Contains("Teleport", await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Login_RateLimited_Returns429()
     {
         if (!await DbAsync())

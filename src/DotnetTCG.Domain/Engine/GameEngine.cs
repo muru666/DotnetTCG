@@ -107,11 +107,11 @@ public sealed class GameEngine
         string? error = action.Type switch
         {
             GameActionType.PlayCard when action.Card is PokemonCard => _playPokemon.Handle(state, action),
-            GameActionType.PlayCard when action.Card is EnergyCard => _attachEnergy.Handle(state, action),
+            GameActionType.PlayCard when action.Card is EnergyCard => _attachEnergy.Handle(state, action, events),
             GameActionType.PlayCard when action.Card is TrainerCard => _trainer.Handle(state, action, events),
             GameActionType.PlayCard => "Play.UnknownCard",
-            GameActionType.Evolve => HandleEvolve(state, action),
-            GameActionType.AttachEnergy => _attachEnergy.Handle(state, action),
+            GameActionType.Evolve => HandleEvolve(state, action, events),
+            GameActionType.AttachEnergy => _attachEnergy.Handle(state, action, events),
             GameActionType.PlaySupporter or GameActionType.PlayStadium or GameActionType.UseAbility
                 when action.Card is TrainerCard => _trainer.Handle(state, action, events),
             GameActionType.PlaySupporter or GameActionType.PlayStadium => "Trainer.CardRequired",
@@ -119,9 +119,9 @@ public sealed class GameEngine
             GameActionType.UseAbility or GameActionType.ActivateAbility
                 => HandleAbility(state, action, events),
             GameActionType.Attack => HandleAttack(state, action, events),
-            GameActionType.PassTurn => _turns.PassTurn(state, action.PlayerIndex),
+            GameActionType.PassTurn => _turns.PassTurn(state, action.PlayerIndex, events),
             GameActionType.Concede => _turns.Concede(state, action.PlayerIndex),
-            GameActionType.DrawCard => HandleManualDraw(state, action),
+            GameActionType.DrawCard => HandleManualDraw(state, action, events),
             _ => "Action.Unknown",
         };
 
@@ -131,6 +131,10 @@ public sealed class GameEngine
         if (state.PendingChoice is not null)
             return new GameActionResult(true, null, state.PendingChoice, events);
 
+        // Resolver KO de cualquier efecto aplicado por la acción (Rainbow,
+        // curas con autodaño, etc.): antes solo se resolvía en ataque/habilidad
+        // y un Pokémon a 0 HP seguía en el campo.
+        _knockouts.Resolve(state, events);
         CheckVictory(state, events);
         return new GameActionResult(true, null, null, events);
     }
@@ -188,16 +192,27 @@ public sealed class GameEngine
         if (state.PendingChoice is not null)
             return new GameActionResult(true, null, state.PendingChoice, events);
 
-        if (state.PendingAttack is not null)
+        var pendingAttack = state.PendingAttack;
+        if (pendingAttack is not null)
         {
-            _knockouts.Resolve(state, events);
-            CheckVictory(state, events);
-            if (state.Status != GameStatus.Finished)
-                _turns.EndTurn(state, events);
-            state.SetPendingAttack(null);
+            // Destiny Burst del defensor KO por un ataque con pendiente (el
+            // camino sin pendiente lo resolvía en HandleAttack).
+            var attacker = state.Players[pendingAttack.ActingPlayerIndex].Active;
+            var defender = state.OpponentOf(pendingAttack.ActingPlayerIndex).Active;
+            if (attacker is not null && defender is { KnockedOut: true }
+                && defender.Card.Abilities.Any(a => a.Name == "Destiny Burst"))
+                _knockouts.ApplyDestinyBurst(state, pendingAttack.ActingPlayerIndex, attacker, events);
         }
 
+        // Resolver KO de la elección (Rainbow, autodaño, ataque con pendiente):
+        // antes solo se resolvía en los caminos sin pendiente.
+        _knockouts.Resolve(state, events);
         CheckVictory(state, events);
+        // Con la muerte súbita el estado vuelve a Setup: ahí NO se termina turno.
+        if (pendingAttack is not null
+            && state.Status is not (GameStatus.Finished or GameStatus.Setup))
+            _turns.EndTurn(state, events);
+        state.SetPendingAttack(null);
         return new GameActionResult(true, null, null, events);
     }
 
@@ -236,14 +251,15 @@ public sealed class GameEngine
         return null;
     }
 
-    private string? HandleEvolve(GameState state, GameAction action)
+    private string? HandleEvolve(GameState state, GameAction action, List<GameEvent> events)
     {
         var error = _evolve.Handle(state, action);
         if (error is not null)
             return error;
+        events.Add(GameEvent.Evolution);
         if (action.Card is PokemonCard { Subtypes: var subtypes }
             && subtypes.Contains(SubType.Mega))
-            _turns.EndTurn(state, []);
+            _turns.EndTurn(state, events);
         return null;
     }
 
@@ -270,7 +286,9 @@ public sealed class GameEngine
             {
                 _knockouts.Resolve(state, events);
                 CheckVictory(state, events);
-                if (state.Status != GameStatus.Finished)
+                // Con la muerte súbita el estado vuelve a Setup: ahí NO se
+                // termina turno (el EndTurn arrancaría otra vez el conteo).
+                if (state.Status is not (GameStatus.Finished or GameStatus.Setup))
                     _turns.EndTurn(state, events);
             }
 
@@ -288,17 +306,27 @@ public sealed class GameEngine
 
         _knockouts.Resolve(state, events);
         CheckVictory(state, events);
-        if (state.Status != GameStatus.Finished)
+        // Con la muerte súbita el estado vuelve a Setup: ahí NO se termina turno.
+        if (state.Status is not (GameStatus.Finished or GameStatus.Setup))
             _turns.EndTurn(state, events);
         return null;
     }
 
-    private string? HandleManualDraw(GameState state, GameAction action)
+    private string? HandleManualDraw(GameState state, GameAction action, List<GameEvent> events)
     {
         if (state.Phase != TurnPhase.Draw)
             return "Draw.NotDrawPhase";
         var draw = _services.Turns.ProcessAutoDraw(state);
-        return draw.IsFailure ? "Game.DeckOut" : null;
+        if (draw.IsFailure)
+        {
+            // Sin robo posible: la partida termina acá (antes devolvía el error
+            // y el jugador seguía jugando, esquivando la derrota por mazo vacío).
+            state.Finish(1 - state.CurrentPlayerIndex);
+            events.Add(GameEvent.GameOver);
+            return "Game.DeckOut";
+        }
+
+        return null;
     }
 
     private void CheckVictory(GameState state, List<GameEvent> events)
@@ -335,5 +363,14 @@ public sealed class GameEngine
         state.SetStatus(GameStatus.Setup);
         state.SetCurrentPlayer(state.StartingPlayerIndex);
         state.SetPhase(TurnPhase.Draw);
+        // La segunda partida arranca como la primera: turno 1 (con sus
+        // restricciones de primer turno) y contadores limpios. Antes heredaba
+        // el TurnNumber acumulado y arrancaba sin esas restricciones.
+        state.SetTurnNumber(1);
+        state.ResetTurnCounters();
+        state.MulliganCounts[0] = 0;
+        state.MulliganCounts[1] = 0;
+        state.SupportersBlockedUntilTurn[0] = -1;
+        state.SupportersBlockedUntilTurn[1] = -1;
     }
 }

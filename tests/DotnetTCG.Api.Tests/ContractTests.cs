@@ -36,7 +36,7 @@ public sealed class ContractTests
         }
         catch
         {
-            Console.WriteLine("SKIPPED: Postgres de test no disponible (Docker).");
+            Skip.If(true, "Postgres de test no disponible (Docker).");
             return false;
         }
     }
@@ -93,7 +93,7 @@ public sealed class ContractTests
 
     private sealed record DeckIdDto(Guid Id);
 
-    [Fact]
+    [SkippableFact]
     public async Task RegisterLoginMe_RoundTrip()
     {
         if (!await PostgresAvailableAsync())
@@ -105,7 +105,7 @@ public sealed class ContractTests
         Assert.Equal(HttpStatusCode.OK, me.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Login_WrongPassword_401()
     {
         if (!await PostgresAvailableAsync())
@@ -120,7 +120,7 @@ public sealed class ContractTests
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Deck_Idor_ForeignDeck_404()
     {
         if (!await PostgresAvailableAsync())
@@ -135,7 +135,7 @@ public sealed class ContractTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Cards_Search_RejectsOversizedPage()
     {
         if (!await PostgresAvailableAsync())
@@ -152,7 +152,7 @@ public sealed class ContractTests
         Assert.Contains("\"pageSize\":100", body);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Import_NonAdmin_403_Admin_200()
     {
         if (!await PostgresAvailableAsync())
@@ -214,7 +214,7 @@ public sealed class ContractTests
         Assert.Contains("\"imported\":1", body);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GameFlow_SetupAndFirstAttacks_NoLeak()
     {
         if (!await PostgresAvailableAsync())

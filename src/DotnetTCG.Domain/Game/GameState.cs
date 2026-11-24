@@ -86,6 +86,9 @@ public sealed class GameState
 
     public void SetStadium(TrainerCard stadium) => StadiumCard = stadium;
 
+    /// <summary>Reinicio de turno (muerte súbita: la nueva partida arranca en 1).</summary>
+    public void SetTurnNumber(int turnNumber) => TurnNumber = turnNumber;
+
     public void SetPendingChoice(PendingChoice? choice) => PendingChoice = choice;
 
     public void SetPendingAttack(PendingAttack? attack) => PendingAttack = attack;

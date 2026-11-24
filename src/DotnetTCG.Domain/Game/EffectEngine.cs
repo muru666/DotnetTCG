@@ -148,8 +148,17 @@ public sealed class EffectEngine(
         switch (spec.Target)
         {
             case EffectTarget.OwnActive:
-                if (own.Active is not null)
-                    targets.Add(own.Active);
+                // Si el llamador eligió objetivo (TrainerHandler manda Source ==
+                // SelectedTarget), la cura va al elegido: con Super Potion/Potion
+                // la cura se iba siempre al activo mientras la energía se
+                // descartaba del elegido (efecto partido).
+                var ownActive = context.Source is not null
+                    && context.Source == context.SelectedTarget
+                    && context.SelectedTarget is not null
+                        ? context.SelectedTarget
+                        : own.Active;
+                if (ownActive is not null)
+                    targets.Add(ownActive);
                 break;
             case EffectTarget.OwnBench:
                 if (context.SelectedTarget is not null)

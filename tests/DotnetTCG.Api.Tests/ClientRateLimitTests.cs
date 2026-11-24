@@ -14,7 +14,7 @@ public sealed class ClientRateLimitTests
         return context;
     }
 
-    [Fact]
+    [SkippableFact]
     public void PartitionKey_DifferentClients_GetDifferentBuckets()
     {
         // Regresión BUG-008: con la clave constante (bucket global), cualquier
@@ -25,7 +25,7 @@ public sealed class ClientRateLimitTests
         Assert.NotEqual(a, b);
     }
 
-    [Fact]
+    [SkippableFact]
     public void PartitionKey_SameClient_SameBucket()
     {
         var first = ClientRateLimit.PartitionKey(ContextWithIp("203.0.113.10"));
@@ -34,7 +34,7 @@ public sealed class ClientRateLimitTests
         Assert.Equal(first, second);
     }
 
-    [Fact]
+    [SkippableFact]
     public void PartitionKey_WithoutRemoteIp_FallsBackToStableKey()
     {
         // TestServer no setea RemoteIpAddress: la clave debe ser estable y no nula.

@@ -43,7 +43,7 @@ public sealed class EvolveHandler(EngineServices services)
 
 public sealed class AttachEnergyHandler(EngineServices services)
 {
-    public string? Handle(GameState state, GameAction action)
+    public string? Handle(GameState state, GameAction action, List<GameEvent> events)
     {
         if (action.Card is not EnergyCard energy)
             return "Energy.CardRequired";
@@ -60,6 +60,7 @@ public sealed class AttachEnergyHandler(EngineServices services)
         board.RemoveFromHand(energy);
         action.Target.AttachEnergy(energy);
         state.RegisterEnergyAttached();
+        events.Add(GameEvent.EnergyAttached);
 
         if (energy.Special == SpecialEnergyType.Rainbow)
             action.Target.AddDamage(10);
@@ -84,6 +85,11 @@ public sealed class RetreatHandler(EngineServices services)
             return error.Code;
 
         var board = state.Players[action.PlayerIndex];
+        // El reemplazo tiene que venir de la banca propia: SwitchActive lanza si
+        // no, y a esa altura las energías ya se habrían descartado.
+        if (!board.Bench.Contains(action.Target))
+            return "Retreat.InvalidTarget";
+
         var retreating = board.Active!;
         foreach (var energy in energies)
         {

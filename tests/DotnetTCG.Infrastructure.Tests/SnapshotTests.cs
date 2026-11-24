@@ -75,7 +75,7 @@ public sealed class SnapshotTests
         return state;
     }
 
-    [Fact]
+    [SkippableFact]
     public void RoundTrip_MidGame_PreservesEverything()
     {
         var catalog = Catalog();
@@ -101,7 +101,7 @@ public sealed class SnapshotTests
         Assert.Equal(original.EnergiesAttachedThisTurn, restored.EnergiesAttachedThisTurn);
     }
 
-    [Fact]
+    [SkippableFact]
     public void CollectCardIds_CoversAllZones()
     {
         var catalog = Catalog();
@@ -118,7 +118,7 @@ public sealed class SnapshotTests
         Assert.Contains("supporter", ids);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Deserialize_MissingCard_Throws()
     {
         var catalog = Catalog();

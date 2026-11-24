@@ -18,7 +18,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -140,6 +140,15 @@ if (args is ["backfill-starter-decks"])
     }
     Console.WriteLine($"Backfill: {created} mazos iniciales creados ({ids.Count} usuarios).");
     return;
+}
+
+// Migraciones al arrancar el servidor: sin esto, un despliegue nuevo (compose /
+// Dockerfile) arrancaba con la DB vacía, /health respondía 200 y todo lo demás
+// 500. Los comandos CLI de arriba ya migran por su cuenta. AUDIT-2026-11 BUG-011.
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AppDbContext>()
+        .Database.MigrateAsync();
 }
 
 if (!string.IsNullOrWhiteSpace(pathBase))

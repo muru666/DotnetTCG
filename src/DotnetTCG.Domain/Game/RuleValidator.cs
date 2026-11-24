@@ -28,6 +28,13 @@ public sealed class RuleValidator
             errors.Add(new Error("Deck.MaxCopies", $"'{group.Key}' exceeds {MaxCopiesPerName} copies."));
         }
 
+        // Regla de negocio (máx. 1 ACE SPEC por mazo): vive en el Dominio para que
+        // la valide también NewGame al iniciar la partida, no solo DeckService.
+        var aceSpec = cards.OfType<TrainerCard>()
+            .Count(t => t.TrainerSubtype == SubType.AceSpec);
+        if (aceSpec > 1)
+            errors.Add(new Error("Deck.AceSpec", "At most one ACE SPEC card per deck."));
+
         return errors;
     }
 
@@ -74,6 +81,12 @@ public sealed class RuleValidator
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(trainer);
+
+        // Forest's Curse (p. ej. Trevenant activo del rival) bloquea tus Items.
+        if (trainer.TrainerSubtype == SubType.Item
+            && state.OpponentOf(playerIndex).Active?.Card.Abilities
+                .Any(a => a.Name == "Forest's Curse") == true)
+            return new Error("Trainer.ItemsRestricted", "Item cards are blocked by Forest's Curse.");
 
         if (trainer.TrainerSubtype == SubType.Supporter)
         {

@@ -4,7 +4,7 @@ namespace DotnetTCG.Infrastructure.Tests;
 
 public sealed class SystemClockTests
 {
-    [Fact]
+    [SkippableFact]
     public void UtcNow_IsCloseToUtcNow()
     {
         var clock = new SystemClock();

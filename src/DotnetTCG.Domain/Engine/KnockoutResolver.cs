@@ -71,7 +71,8 @@ public sealed class KnockoutResolver
             var replacement = board.Bench[0];
             board.RemoveFromBench(replacement);
             board.PlaceActive(replacement);
-            replacement.JustPlayed = false;
+            // No se toca JustPlayed: si entró en juego este turno no puede
+            // evolucionar hasta que EndTurn lo resetee (regla del doc).
         }
     }
 

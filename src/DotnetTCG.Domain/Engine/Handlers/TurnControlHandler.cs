@@ -5,11 +5,23 @@ namespace DotnetTCG.Domain.Engine.Handlers;
 
 public sealed class TurnControlHandler(EngineServices services, KnockoutResolver knockouts)
 {
-    public string? PassTurn(GameState state, int playerIndex)
+    public string? PassTurn(GameState state, int playerIndex, List<GameEvent> events)
     {
         if (state.CurrentPlayerIndex != playerIndex)
             return "Turn.NotYourTurn";
-        EndTurn(state, []);
+        if (state.Phase == TurnPhase.Draw)
+        {
+            // El robo inicial es obligatorio: o se roba acá, o se pierde por
+            // mazo vacío (antes el PassTurn esquivaba el robo y la derrota).
+            var draw = services.Turns.ProcessAutoDraw(state);
+            if (draw.IsFailure)
+            {
+                state.Finish(1 - playerIndex);
+                events.Add(GameEvent.GameOver);
+                return "Game.DeckOut";
+            }
+        }
+        EndTurn(state, events);
         return null;
     }
 
