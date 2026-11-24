@@ -67,7 +67,9 @@ export class DeckBuilderPageComponent implements OnInit {
         });
       } else if (decks.length > 0) {
         this.deckService.loadDeck(decks[0].id).subscribe({
-          next: deck => this.applyLoadedDeck(deck)
+          next: deck => this.applyLoadedDeck(deck),
+          // El error ya queda publicado en deckService.error (FE-015).
+          error: () => {}
         });
       }
     });
@@ -180,7 +182,9 @@ export class DeckBuilderPageComponent implements OnInit {
       if (!confirmed) return;
 
       this.deckService.loadDeck(deckId).subscribe({
-        next: deck => this.applyLoadedDeck(deck)
+        next: deck => this.applyLoadedDeck(deck),
+        // El error ya queda publicado en deckService.error (FE-015).
+        error: () => {}
       });
     });
   }

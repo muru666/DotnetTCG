@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, from, of, EMPTY } from 'rxjs';
+import { Observable, forkJoin, from, of, EMPTY, throwError } from 'rxjs';
 import { map, tap, catchError, switchMap, concatMap, toArray } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { extractHttpError } from '../../utils/http-error';
@@ -256,7 +256,9 @@ export class DeckBuilderService {
       catchError(err => {
         this.error.set(extractHttpError(err, 'Error al cargar mazo'));
         this.isLoading.set(false);
-        return of(null as unknown as Deck);
+        // Re-lanza para que el componente ejecute su error: (redirect a la
+        // lista). Con of(null) ese handler era inalcanzable (FE-015).
+        return throwError(() => err);
       })
     );
   }

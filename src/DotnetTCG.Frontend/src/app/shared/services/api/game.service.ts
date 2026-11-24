@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { GameState, GameActionResponse, BoardDto, GameLogEntry, Attack, PokemonInPlay, PokemonCard, EnergyCard, TrainerCard, Card, PendingChoice } from '../../models/dtos/game-state.model';
 import { LobbyState } from '../../models/dtos/lobby-state.model';
 import { ChatMessage, ChatMessageDto } from '../../models/chat/chat-message.model';
-import { ActionResultResponse, GameEventDTO } from '../../models/dtos/action-result.model';
+import { GameEventDTO } from '../../models/dtos/action-result.model';
 import { AuthService } from '../../../../app/core/services/auth.service';
 import { GameSignalService, HubGameActionRequest } from '../websocket/game-signal.service';
 
@@ -216,7 +216,7 @@ export class GameService {
   private lobbyPlayers: { userId: string; order: number; username: string }[] = [];
   private myMulligans = 0;
   private readonly cardCache = new Map<string, Card>();
-  private readonly deckNames = new Map<string, string>();
+  private readonly deckNames = new Map<string, string | null>();
 
   private readonly authService = inject(AuthService);
 
@@ -410,6 +410,9 @@ export class GameService {
       this.deckNames.set(deckId, deck.name);
       return deck.name;
     } catch {
+      // Cachea también el fallo (404 por IDOR en mazos ajenos): sin esto,
+      // cada broadcast del lobby reintentaba el mismo 404 (FE-017).
+      this.deckNames.set(deckId, null);
       return null;
     }
   }
@@ -465,9 +468,8 @@ export class GameService {
           this.gameState.set(result.gameState);
           this.gameStateSubject.next(result.gameState);
         }
-        if (result.events) {
-          this.gameEvents.set(result.events);
-        }
+        // Los events ya los setea el listener de action-result (setupHubListeners):
+        // hacerlo acá duplicaba los toasts de la acción propia (FE-013).
       }),
       map(result => {
         if (result.error) {
@@ -636,6 +638,10 @@ export class GameService {
     this.gameState.set(null);
     this.lobbyPlayers = [];
     this.myMulligans = 0;
+    // No arrastrar chat/eventos/error de la partida anterior a la siguiente (FE-012).
+    this.chatMessages.set([]);
+    this.gameEvents.set([]);
+    this.error.set(null);
   }
 
   public sendChatMessage(content: string, senderName: string): void {
@@ -887,7 +893,10 @@ export class GameService {
   }
 
   private async mapPokemon(view: BackendPokemon, active: boolean): Promise<PokemonInPlay> {
-    const card = await this.fetchPokemon(view.cardId);
+    // Un id fuera del catálogo no debe romper todo el mapeo del estado (FE-018):
+    // se degrada a una carta placeholder con los datos del tablero.
+    const card = await this.fetchPokemon(view.cardId)
+      .catch(() => this.placeholderPokemon(view));
     const energies = await Promise.all(view.energies.map(id => this.fetchEnergy(id)));
     const tool = view.tool ? await this.fetchTrainer(view.tool).catch(() => null) : null;
     return {
@@ -981,6 +990,27 @@ export class GameService {
     } catch {
       return null;
     }
+  }
+
+  /** Carta placeholder cuando el catálogo no tiene el id (FE-018). */
+  private placeholderPokemon(view: BackendPokemon): PokemonCard {
+    return {
+      id: view.cardId,
+      name: view.name || view.cardId,
+      imageUrl: '',
+      supertype: 'POKEMON',
+      subtypes: [],
+      rules: [],
+      setId: null,
+      hp: view.hp,
+      evolvesFrom: null,
+      type: 'COLORLESS',
+      weaknesses: [],
+      resistances: [],
+      retreatCost: 0,
+      attacks: [],
+      abilities: [],
+    };
   }
 
   private toPokemonCard(dto: Record<string, unknown>): PokemonCard {

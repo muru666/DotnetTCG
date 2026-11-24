@@ -23,8 +23,8 @@ import { PendingChoice } from '../../../../shared/models/dtos/game-state.model';
             }
           </div>
           <div class="choice-actions">
-            <button class="choice-confirm" [class.btn-disabled]="selectedIds().size === 0"
-              [disabled]="selectedIds().size === 0" (click)="onConfirm(pc.choiceId)">Confirmar</button>
+            <button class="choice-confirm" [class.btn-disabled]="selectedIds().size === 0 || confirming()"
+              [disabled]="selectedIds().size === 0 || confirming()" (click)="onConfirm(pc.choiceId)">Confirmar</button>
           </div>
         </div>
       </div>
@@ -74,11 +74,14 @@ export class ChoiceDialogComponent {
   readonly resolve = output<{ choiceId: string; selectedOptionIds: string[] }>();
 
   protected readonly selectedIds = signal(new Set<string>());
+  /** Bloquea el doble clic mientras la confirmación viaja al hub (FE-014). */
+  protected readonly confirming = signal(false);
 
   constructor() {
     effect(() => {
       this.pendingChoice();
       this.selectedIds.set(new Set());
+      this.confirming.set(false);
     });
   }
 
@@ -88,7 +91,8 @@ export class ChoiceDialogComponent {
   }
 
   protected onConfirm(choiceId: string): void {
-    if (this.selectedIds().size === 0) return;
+    if (this.selectedIds().size === 0 || this.confirming()) return;
+    this.confirming.set(true);
     this.resolve.emit({ choiceId, selectedOptionIds: [...this.selectedIds()] });
   }
 }

@@ -107,7 +107,7 @@ export interface PokemonInPlay {
 }
 
 export interface GameActionResponse {
-  type: 'GAME_STATE_UPDATE' | 'ERROR' | 'NOTIFICATION';
+  type: 'GAME_STATE_UPDATE' | 'ERROR';
   gameState?: GameState;
   error?: string;
   event?: GameEvent;

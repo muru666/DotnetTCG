@@ -38,6 +38,7 @@ export class GameSearcherComponent implements OnInit, OnDestroy {
 
   private readonly searchSubject = new Subject<string>();
   private searchSub?: Subscription;
+  private gamesSub?: Subscription;
 
   protected readonly filteredGames = computed(() => {
     const search = this.creatorSearch().toLowerCase().trim();
@@ -65,6 +66,7 @@ export class GameSearcherComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.searchSub?.unsubscribe();
+    this.gamesSub?.unsubscribe();
     this.searchSubject.complete();
   }
 
@@ -83,8 +85,11 @@ export class GameSearcherComponent implements OnInit, OnDestroy {
   }
 
   private loadGames(): void {
+    // Cancela la petición anterior: con filtros rapidos, la respuesta vieja
+    // podía pisar a la nueva y quedar la lista desfasada (FE-016).
+    this.gamesSub?.unsubscribe();
     this.gamesLoading.set(true);
-    this.gameService.listGames(this.activeFilter()).subscribe({
+    this.gamesSub = this.gameService.listGames(this.activeFilter()).subscribe({
       next: games => {
         this.allGames.set(games);
         this.gamesLoading.set(false);

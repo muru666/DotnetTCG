@@ -116,6 +116,20 @@ describe('DeckBuilderService', () => {
     // cualquier petición extra a /cards haría fallar httpMock.verify()
   });
 
+  it('loadDeck propaga el error al suscriptor (FE-015)', () => {
+    // Antes catchError devolvía of(null): el handler error: del componente
+    // (redirect a la lista) era inalcanzable.
+    let errored = false;
+    service.loadDeck('nope').subscribe({ error: () => (errored = true) });
+
+    httpMock.expectOne(`${API}/v1/decks/nope`)
+      .flush({ title: 'Deck.NotFound' }, { status: 404, statusText: 'Not Found' });
+
+    expect(errored).toBe(true);
+    expect(service.error()).not.toBeNull();
+    expect(service.isLoading()).toBe(false);
+  });
+
   it('saveDeck ejecuta las mutaciones en secuencia (una en vuelo a la vez)', () => {
     // FE-005: con forkJoin las N mutaciones volaban juntas sobre endpoints
     // read-modify-write y se pisaban entre sí.
