@@ -10,12 +10,13 @@ public sealed class AttackRegistryTests
     private static readonly AttackRegistry Registry = new();
 
     private static (GameState State, AttackContext Ctx) NewContext(
-        string name, string damage = "50", PokemonType type = PokemonType.Fire, int energy = 1)
+        string name, string damage = "50", PokemonType type = PokemonType.Fire, int energy = 1,
+        string pokemonName = "Attacker")
     {
         var state = new GameState(new PlayerBoard(), new PlayerBoard(), 0, suddenDeath: false);
         state.SetStatus(GameStatus.InProgress);
         var attacker = new PokemonInPlay(new PokemonCard(
-            "a", "Attacker", [SubType.Basic], [], "xy1", "", 100, 1, null, type,
+            "a", pokemonName, [SubType.Basic], [], "xy1", "", 100, 1, null, type,
             [new Attack(name, "", damage, [PokemonType.Colorless])], [], [], []));
         for (var i = 0; i < energy; i++)
             attacker.AttachEnergy(TestCards.BasicEnergy($"e{i}", type));
@@ -43,22 +44,10 @@ public sealed class AttackRegistryTests
 
     public static TheoryData<string> AllAttacks()
     {
+        // Dinámico: cubre todas las claves del registry (AUDIT D011). Si se agrega o renombra
+        // una clave, el test de ejecución la cubre sin tocar esta lista.
         var data = new TheoryData<string>();
-        foreach (var name in new[]
-        {
-            "Blaze Ball", "Hydro Pump", "Colorful Wind", "Evil Ball", "Balloon Barrage",
-            "Circle Circuit", "Cosmic Spin", "Core Splash", "Tailspin", "Bite Off",
-            "Wake-Up", "Rage", "Second Bite", "Leaf Munch", "Magma Mantle",
-            "Continuous Tumble", "Spiny Rush", "Rock Blast", "Charge Dash", "Electron Crush",
-            "Seething Anger", "Hyper Fang", "Rapid Spin", "Splash Bomb", "Conversion Powder",
-            "Confusion Wave", "Night Claw", "Flare Blitz", "Fire Tail", "Flame Charge",
-            "Energy Glide", "Oblivion", "Geomancy", "Joust", "Y Cyclone",
-            "Tricky Steps", "Energy Salon", "Spirit Scream", "Clamp", "Bounce",
-            "Hypno", "Recover", "Dig Out", "Seafaring", "Lead Skiddo",
-            "Clairvoyant", "Mine", "Pickup", "Bother", "Moonblast",
-            "Metal", "Astonish", "Mad Mountain", "Torment", "Darkness Fang",
-            "King's Smash", "X Scissor", "Rock Throw",
-        })
+        foreach (var name in new AttackRegistry().RegisteredNames)
             data.Add(name);
         return data;
     }
@@ -141,11 +130,11 @@ public sealed class AttackRegistryTests
     }
 
     [Fact]
-    public void Tailspin_Plus40WhenDefenderDamaged()
+    public void TailspinPiledriver_Plus40WhenDefenderDamaged()
     {
-        var (_, ctx) = NewContext("Tailspin", "40", PokemonType.Fire, 1);
+        var (_, ctx) = NewContext("Tailspin Piledriver", "40", PokemonType.Fire, 1);
         ctx.Defender.AddDamage(10);
-        var result = NewPipeline().Execute(ctx, Registry.Find("Tailspin")!);
+        var result = NewPipeline().Execute(ctx, Registry.Find("Tailspin Piledriver")!);
 
         Assert.Equal(80, result.DamageDealt);
     }
@@ -181,6 +170,58 @@ public sealed class AttackRegistryTests
             NewContext("Continuous Tumble").Ctx, Registry.Find("Continuous Tumble")!);
 
         Assert.Equal(120, result.DamageDealt); // 4 × 30
+    }
+
+    // AUDIT D011: ataques variables de xy1 que antes se resolvían con daño fijo.
+
+    [Fact]
+    public void PinMissile_FourFlips_HeadsAll()
+    {
+        var result = NewPipeline(new SeededCoinFlip(
+            Enumerable.Repeat(true, 10).ToArray())).Execute(
+            NewContext("Pin Missile").Ctx, Registry.Find("Pin Missile")!);
+
+        Assert.Equal(40, result.DamageDealt); // 4 × 10
+    }
+
+    [Fact]
+    public void SpikeCannon_FiveFlips_HeadsAll()
+    {
+        var result = NewPipeline(new SeededCoinFlip(
+            Enumerable.Repeat(true, 10).ToArray())).Execute(
+            NewContext("Spike Cannon").Ctx, Registry.Find("Spike Cannon")!);
+
+        Assert.Equal(150, result.DamageDealt); // 5 × 30
+    }
+
+    [Fact]
+    public void Endeavor_TwoFlips_HeadsAll_Adds40()
+    {
+        var result = NewPipeline(new SeededCoinFlip(
+            Enumerable.Repeat(true, 10).ToArray())).Execute(
+            NewContext("Endeavor", "50").Ctx, Registry.Find("Endeavor")!);
+
+        Assert.Equal(90, result.DamageDealt); // 50 + 2 × 20
+    }
+
+    [Fact]
+    public void QuickAttack_Illumise_Heads_Adds20()
+    {
+        var (_, ctx) = NewContext("Quick Attack", "20", pokemonName: "Illumise");
+        var result = NewPipeline(new SeededCoinFlip([true])).Execute(
+            ctx, Registry.Find("Quick Attack")!);
+
+        Assert.Equal(40, result.DamageDealt); // 20 + 20 (Illumise)
+    }
+
+    [Fact]
+    public void QuickAttack_Pikachu_Heads_Adds10()
+    {
+        var (_, ctx) = NewContext("Quick Attack", "20", pokemonName: "Pikachu");
+        var result = NewPipeline(new SeededCoinFlip([true])).Execute(
+            ctx, Registry.Find("Quick Attack")!);
+
+        Assert.Equal(30, result.DamageDealt); // 20 + 10 (Pikachu)
     }
 
     [Fact]
