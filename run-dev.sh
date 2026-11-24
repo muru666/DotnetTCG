@@ -29,6 +29,19 @@ need() {
 need docker
 need dotnet
 
+# Git flow: el dev siempre arranca desde develop (con el trabajo más actual
+# disponible en el remoto). No fatal: se puede trabajar offline o en un zip.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "==> Rama develop"
+  if [ "$(git branch --show-current)" != "develop" ]; then
+    git checkout develop
+  fi
+  if ! git pull --ff-only --quiet; then
+    echo "    (aviso) no se pudo actualizar develop desde el remoto; se usa la versión local" >&2
+  fi
+  echo "    develop @ $(git rev-parse --short HEAD)"
+fi
+
 echo "==> Postgres de desarrollo"
 if ! docker ps --format '{{.Names}}' | grep -qx "$PG_CONTAINER"; then
   if docker ps -a --format '{{.Names}}' | grep -qx "$PG_CONTAINER"; then
