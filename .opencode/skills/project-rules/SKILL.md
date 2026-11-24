@@ -51,3 +51,21 @@ El frontend **sí tiene tests automatizados**: la corrección se verifica con ti
 
 - Al agregar o cambiar comportamiento en el frontend, incluir los tests que lo cubran (siguiendo la skill angular-testing).
 - Los tests son parte de la entrega, no un extra opcional.
+
+## 6. Flujo de ramas: git flow
+
+**Decisión del proyecto (2026-11-24):** este repositorio trabaja con **git flow**, con remoto en `github.com/muru666/DotnetTCG`.
+
+- `main`: rama de producción. Solo avanza con el merge de `release/*` o `hotfix/*`, y **nunca** con un push directo de trabajo en curso (la regla global de no tocar `main` sigue vigente: cualquier merge a `main` requiere confirmación explícita del usuario).
+- `develop`: rama de integración y rama por defecto del remoto. Todo el trabajo cotidiano llega acá.
+- `feature/<descripcion-en-kebab-case>`: funcionalidades nuevas, nacidas desde `develop`.
+- `fix/<descripcion-en-kebab-case>`: correcciones, nacidas desde `develop`.
+- `release/<version>`: preparación de entrega; se crea desde `develop` y solo recibe correcciones de release.
+- `hotfix/<descripcion-en-kebab-case>`: arreglos urgentes de producción; se crean desde `main` y se mergean en `main` **y** en `develop`.
+
+Reglas de operación:
+
+- El trabajo se hace siempre en una rama, nunca directamente sobre `develop`, y se integra con merge (fast-forward cuando no hay divergencia).
+- Push de cada rama con `git push -u origin <rama>`.
+- Los PRs van contra `develop`; los de `hotfix` contra `main`.
+- Nombres de rama que describan el cambio concreto (`feature/login-oauth-google`, no `feature/nueva-feature`).
