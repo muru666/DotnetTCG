@@ -83,8 +83,11 @@ export class GameSignalService {
       }
     });
 
-    this.connection = connection;
+    // Asignar SÓLO después de un start() exitoso: si falla (token vencido,
+    // servidor caído), this.connection queda null y connect() puede reintentar
+    // (antes quedaba "conectada" y todos los invoke morían en silencio — FE-010).
     await connection.start();
+    this.connection = connection;
     this.connectionStatusSubject.next(true);
   }
 

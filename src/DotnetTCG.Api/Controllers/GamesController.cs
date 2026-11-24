@@ -133,7 +133,7 @@ public sealed class GamesController(
         var userId = CurrentUser.Id(User);
         if (userId is null)
             return Unauthorized();
-        var result = await execution.StartGameAsync(id, ct);
+        var result = await execution.StartGameAsync(id, userId.Value, ct);
         return result.IsSuccess
             ? Ok(ToSummary(result.Value!))
             : this.ToActionResult(result);

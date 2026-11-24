@@ -53,7 +53,7 @@ public sealed class GameExecutionServiceTests
         var engine = new GameEngine(GameEngine.CreateDefault(new Random(7), new AlwaysHeadsCoinFlip()));
         var execution = new GameExecutionService(games, logs, cardRepo, deckRepo, engine,
             new GameSnapshotMapper(), new AlwaysHeadsCoinFlip(), clock);
-        var started = await execution.StartGameAsync(gameId, CancellationToken.None);
+        var started = await execution.StartGameAsync(gameId, user0, CancellationToken.None);
         Assert.True(started.IsSuccess, started.Error?.Message);
 
         var loaded = await execution.LoadGameStateAsync(gameId, user0, CancellationToken.None);

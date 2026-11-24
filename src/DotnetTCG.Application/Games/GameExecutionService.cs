@@ -38,10 +38,14 @@ public sealed class GameExecutionService(
 {
     private const int MaxRetries = 3;
 
-    public async Task<Result<GameData>> StartGameAsync(Guid gameId, CancellationToken cancellationToken)
+    public async Task<Result<GameData>> StartGameAsync(
+        Guid gameId, Guid userId, CancellationToken cancellationToken)
     {
         var game = await games.GetByIdAsync(gameId, cancellationToken);
-        if (game is null)
+        // Sólo un miembro del lobby puede iniciar (antes cualquier autenticado
+        // podía hacerlo: AUDIT-2026-11 BUG-006). Oculta la existencia como
+        // Pause/Resume/ExecuteAction.
+        if (game is null || game.Players.All(p => p.UserId != userId))
             return Result<GameData>.Failure(new Error("Game.NotFound", "Game not found."));
         if (game.Status != GameStatus.InLobby)
             return Result<GameData>.Failure(new Error("Game.NotJoinable", "Game already started."));

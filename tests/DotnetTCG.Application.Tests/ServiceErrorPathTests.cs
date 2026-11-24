@@ -51,9 +51,28 @@ public sealed class ServiceErrorPathTests
         await games.AddAsync(game, CancellationToken.None);
         var exec = NewExecution(games);
 
-        var result = await exec.StartGameAsync(game.Id, CancellationToken.None);
+        var result = await exec.StartGameAsync(game.Id, user, CancellationToken.None);
 
         Assert.Equal("Game.NotReady", result.Error!.Code);
+    }
+
+    [Fact]
+    public async Task GameExecution_Start_ByNonMember_NotFound()
+    {
+        // BUG-006: antes cualquier autenticado podía iniciar el lobby.
+        var games = new FakeGameRepository();
+        var user = Guid.NewGuid();
+        var intruder = Guid.NewGuid();
+        var game = new GameData(
+            Guid.NewGuid(), GameStatus.InLobby, 0, 0, TurnPhase.Draw, 0, false, null,
+            user, true, true, null, null, 0,
+            [new GamePlayerData(user, 0, null, false)], Now);
+        await games.AddAsync(game, CancellationToken.None);
+        var exec = NewExecution(games);
+
+        var result = await exec.StartGameAsync(game.Id, intruder, CancellationToken.None);
+
+        Assert.Equal("Game.NotFound", result.Error!.Code);
     }
 
     [Fact]
@@ -261,7 +280,7 @@ public sealed class ServiceErrorPathTests
         await games.AddAsync(game, CancellationToken.None);
         var exec = ServiceErrorPathHelpers.NewExecution(games, cardRepo, deckRepo);
 
-        var result = await exec.StartGameAsync(game.Id, CancellationToken.None);
+        var result = await exec.StartGameAsync(game.Id, user, CancellationToken.None);
 
         Assert.Equal("Deck.NotFound", result.Error!.Code);
     }

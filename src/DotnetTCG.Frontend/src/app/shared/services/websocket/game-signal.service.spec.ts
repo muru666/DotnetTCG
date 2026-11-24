@@ -85,6 +85,17 @@ describe('GameSignalService', () => {
     expect(hub.invoke).toHaveBeenCalledWith('Reconnect', 'g1');
   });
 
-  // Nota: FE-010 (un connect() que falla deja this.connection seteado) sigue
-  // abierto en docs/AUDIT-2026-11.md; queda fuera del alcance de este fix.
+  it('un connect() que falla deja el servicio sin conexión y permite reintentar (FE-010)', async () => {
+    hub.start.mockRejectedValueOnce(new Error('401'));
+
+    await expect(service.connect()).rejects.toThrow('401');
+
+    // Sin conexión "fantasma": el reintento vuelve a construir e iniciar.
+    await service.connect();
+    expect(hub.start).toHaveBeenCalledTimes(2);
+    expect(hub.built).toBe(2);
+
+    await service.reconnect('g1');
+    expect(hub.invoke).toHaveBeenCalledWith('Reconnect', 'g1');
+  });
 });

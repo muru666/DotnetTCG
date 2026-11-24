@@ -585,4 +585,21 @@ public sealed class MoreEndpointTests
         var username = body.GetProperty("players")[0].GetProperty("username").GetString();
         Assert.False(string.IsNullOrWhiteSpace(username));
     }
+
+    [SkippableFact]
+    public async Task Start_ByNonMember_404()
+    {
+        // BUG-006: el chequeo de membresía va antes de cualquier otra regla,
+        // así un intruder recibe 404 sin necesidad de que el lobby esté ready.
+        if (!await DbAsync())
+            return;
+        var member = await RegisterAsync(Unique("sm"));
+        var intruder = await RegisterAsync(Unique("sx"));
+        var created = await member.PostAsJsonAsync("/v1/games", new { isPublic = true });
+        var gameId = (await created.Content.ReadFromJsonAsync<DeckIdDto>())!.Id;
+
+        var response = await intruder.PostAsync($"/v1/games/{gameId}/start", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

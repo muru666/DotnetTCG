@@ -106,7 +106,7 @@ public sealed class GameHub(
         var userId = RequireUser();
         if (userId is null)
             return;
-        var result = await execution.StartGameAsync(gameId, Context.ConnectionAborted);
+        var result = await execution.StartGameAsync(gameId, userId.Value, Context.ConnectionAborted);
         if (result.IsFailure)
         {
             await SendError(result.Error);
