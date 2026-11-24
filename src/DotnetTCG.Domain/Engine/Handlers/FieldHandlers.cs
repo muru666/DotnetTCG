@@ -16,7 +16,8 @@ public sealed class PlayPokemonHandler(EngineServices services)
             return error.Code;
 
         var board = state.Players[action.PlayerIndex];
-        board.RemoveFromHand(card);
+        if (!board.RemoveFromHand(card))
+            return "Play.NotInHand";
         board.AddToBench(new PokemonInPlay(card));
         return null;
     }
@@ -31,11 +32,16 @@ public sealed class EvolveHandler(EngineServices services)
         if (action.Target is null)
             return "Evolve.TargetRequired";
 
+        // El objetivo tiene que ser propio: CanEvolve no recibe el jugador.
+        var board = state.Players[action.PlayerIndex];
+        if (board.Active != action.Target && !board.Bench.Contains(action.Target))
+            return "Evolve.ForeignTarget";
+
         var error = services.Rules.CanEvolve(state, action.Target, evolution);
         if (error is not null)
             return error.Code;
 
-        state.Players[action.PlayerIndex].RemoveFromHand(evolution);
+        board.RemoveFromHand(evolution);
         action.Target.EvolveInto(evolution);
         return null;
     }
@@ -57,7 +63,8 @@ public sealed class AttachEnergyHandler(EngineServices services)
         var board = state.Players[action.PlayerIndex];
         if (!OwnsPokemon(board, action.Target))
             return "Energy.ForeignTarget";
-        board.RemoveFromHand(energy);
+        if (!board.RemoveFromHand(energy))
+            return "Energy.NotInHand";
         action.Target.AttachEnergy(energy);
         state.RegisterEnergyAttached();
         events.Add(GameEvent.EnergyAttached);

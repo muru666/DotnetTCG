@@ -35,7 +35,10 @@ public sealed class LobbyService(
             [new GamePlayerData(creatorId, 0, null, false, Username: string.Empty)],
             now);
         await games.AddAsync(game, cancellationToken);
-        return Result<LobbyDto>.Success(ToDto(game));
+        // Recargar para devolver el username real del creador: el objeto en
+        // memoria lo tiene vacío y la respuesta quedaba incompleta (BUG-014).
+        var reloaded = await games.GetByIdAsync(game.Id, cancellationToken);
+        return Result<LobbyDto>.Success(ToDto(reloaded ?? game));
     }
 
     public async Task<Result<LobbyDto>> JoinAsync(

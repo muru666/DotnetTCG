@@ -188,7 +188,9 @@ public sealed class GameExecutionService(
             if (!new SetupService().NeedsMulligan(state.Players[playerIndex.Value]))
                 return Result<bool>.Failure(new Error("Game.NoMulligan", "Hand has a Basic Pokemon."));
 
-            engine.PerformMulligan(state, playerIndex.Value);
+            var domainError = engine.PerformMulligan(state, playerIndex.Value);
+            if (domainError is not null)
+                return Result<bool>.Failure(domainError);
             var updated = game with { Snapshot = snapshots.Serialize(state), UpdatedAt = clock.UtcNow };
             try
             {

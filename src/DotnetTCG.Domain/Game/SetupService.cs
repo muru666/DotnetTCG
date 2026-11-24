@@ -35,18 +35,29 @@ public sealed class SetupService
         return !board.Hand.OfType<PokemonCard>().Any(c => c.IsBasic);
     }
 
-    public void HandleMulligan(GameState state, int playerIndex, Random random)
+    public Error? HandleMulligan(GameState state, int playerIndex, Random random)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(random);
 
+        // Guardas de dominio: el mulligan sólo existe durante el setup, antes de
+        // confirmar y sólo si la mano no tiene básicos (Application ya lo chequea,
+        // pero el hub/REST no son los únicos llamadores posibles).
+        if (state.Status != GameStatus.Setup)
+            return new Error("Game.NotJoinable", "Not in setup.");
+        if (state.SetupConfirmed[playerIndex])
+            return new Error("Setup.AlreadyConfirmed", "Setup already confirmed.");
         var board = state.Players[playerIndex];
+        if (!NeedsMulligan(board))
+            return new Error("Game.NoMulligan", "Hand has a Basic Pokemon.");
+
         board.ShuffleHandIntoDeck(random);
         for (var i = 0; i < InitialHandSize; i++)
             board.DrawCard();
 
         state.RegisterMulligan(playerIndex);
         state.OpponentOf(playerIndex).DrawCard();
+        return null;
     }
 
     public Error? PlaceActive(GameState state, int playerIndex, PokemonCard card)

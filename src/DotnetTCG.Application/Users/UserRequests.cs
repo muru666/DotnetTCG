@@ -1,3 +1,4 @@
+using System.Text;
 using FluentValidation;
 
 namespace DotnetTCG.Application.Users;
@@ -11,7 +12,9 @@ public sealed class RegisterValidator : AbstractValidator<RegisterRequest>
     {
         RuleFor(x => x.Username).NotEmpty().Length(3, 50);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(200);
-        RuleFor(x => x.Password).MinimumLength(8).MaximumLength(200);
+        RuleFor(x => x.Password).MinimumLength(8)
+            .Must(p => Encoding.UTF8.GetByteCount(p) <= UserService.PasswordMaxBytes)
+            .WithMessage($"Password must be at most {UserService.PasswordMaxBytes} bytes.");
     }
 }
 

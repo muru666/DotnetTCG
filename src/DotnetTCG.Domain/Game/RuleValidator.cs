@@ -123,6 +123,10 @@ public sealed class RuleValidator
         var active = board.Active;
         if (active is null)
             return new Error("Retreat.NoActive", "No Active Pokemon to retreat.");
+        // Sólo energías adjuntas sirven para pagar: sin esta guarda el Dominio
+        // aceptaba energías ajenas/no adjuntas (mitigado hoy por BuildAction).
+        if (!energiesToDiscard.All(e => active.AttachedEnergies.Contains(e)))
+            return new Error("Retreat.EnergyNotAttached", "Only attached Energy can be discarded to retreat.");
         if (state.RetreatsThisTurn >= 1)
             return new Error("Retreat.OncePerTurn", "Only one retreat per turn.");
         if (active.HasStatus(Status.Asleep) || active.HasStatus(Status.Paralyzed))

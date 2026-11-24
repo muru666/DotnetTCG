@@ -516,4 +516,73 @@ public sealed class MoreEndpointTests
             $"/v1/games/{gameId}/lobby");
         Assert.False(withoutPwd.GetProperty("hasPassword").GetBoolean());
     }
+
+    [SkippableFact]
+    public async Task Register_PasswordOver72Bytes_400()
+    {
+        // BUG-011b: el validador (inyectado) debe rechazarlo con 400, no dejar
+        // que llegue a BCrypt (que trunca en silencio).
+        if (!await DbAsync())
+            return;
+        var client = Factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/v1/auth/register", new
+        {
+            username = Unique("long"),
+            email = $"{Guid.NewGuid():N}@x.test",
+            password = new string('x', 100),
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [SkippableFact]
+    public async Task GameState_EnumContract_IsPascalCase_ForFrontendMaps()
+    {
+        // FE-020: el FE mapea status/phase con STATUS_MAP/PHASE_MAP, cuyas
+        // claves son los nombres PascalCase de los enums. Si el backend
+        // cambiara a camelCase, este contrato se rompería en silencio.
+        if (!await DbAsync())
+            return;
+        await SeedMinimalCatalogAsync();
+        var p0 = await RegisterAsync(Unique("e0"));
+        var p1 = await RegisterAsync(Unique("e1"));
+        var deck0 = await GoldenDeckAsync(p0, Unique("D"));
+        var deck1 = await GoldenDeckAsync(p1, Unique("D"));
+
+        var created = await p0.PostAsJsonAsync("/v1/games", new { isPublic = true });
+        var gameId = (await created.Content.ReadFromJsonAsync<DeckIdDto>())!.Id;
+        await p1.PostAsJsonAsync($"/v1/games/{gameId}/join", new { });
+        await p0.PostAsJsonAsync($"/v1/games/{gameId}/deck", new { deckId = deck0 });
+        await p1.PostAsJsonAsync($"/v1/games/{gameId}/deck", new { deckId = deck1 });
+        await p0.PostAsJsonAsync($"/v1/games/{gameId}/ready", new { ready = true });
+        await p1.PostAsJsonAsync($"/v1/games/{gameId}/ready", new { ready = true });
+        (await p0.PostAsJsonAsync($"/v1/games/{gameId}/start", new { }))
+            .EnsureSuccessStatusCode();
+
+        var state = await p0.GetFromJsonAsync<System.Text.Json.JsonElement>(
+            $"/v1/games/{gameId}/state");
+        var status = state.GetProperty("status").GetString()!;
+        var phase = state.GetProperty("phase").GetString()!;
+
+        Assert.Contains(status, Enum.GetNames<GameStatus>());
+        Assert.Contains(phase, Enum.GetNames<TurnPhase>());
+        Assert.Equal("Setup", status);
+    }
+
+    [SkippableFact]
+    public async Task CreateGame_Response_IncludesCreatorUsername()
+    {
+        // BUG-014: la respuesta del alta traía el username del creador vacío.
+        if (!await DbAsync())
+            return;
+        var client = await RegisterAsync(Unique("cu"));
+
+        var created = await client.PostAsJsonAsync("/v1/games", new { isPublic = true });
+
+        created.EnsureSuccessStatusCode();
+        var body = await created.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var username = body.GetProperty("players")[0].GetProperty("username").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(username));
+    }
 }

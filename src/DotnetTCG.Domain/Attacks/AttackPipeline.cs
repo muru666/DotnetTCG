@@ -96,6 +96,14 @@ public sealed class AttackPipeline(
         if (context.Attacker.HasModifier(ModifierType.CannotAttack, context.State.TurnNumber))
             return Fail(context, "Attack.Blocked");
 
+        // El +30 exige descartar energía REALMENTE adjunta: si no, el descarte
+        // silencioso (DetachEnergy false) dejaba el boost sin costo.
+        if (behavior?.NeedsOptionalDiscard == true
+            && context.OptionalDiscardAccepted == true
+            && context.EnergiesToDiscard.Count > 0
+            && context.EnergiesToDiscard.Any(e => !context.Attacker.AttachedEnergies.Contains(e)))
+            return Fail(context, "Attack.EnergyNotAttached");
+
         DiscardOptionalCost(context, behavior);
 
         var input = new DamageCalculationInput(

@@ -1,3 +1,5 @@
+using System.Text;
+using DotnetTCG.Application.Users;
 using FluentValidation;
 
 namespace DotnetTCG.Application.Auth;
@@ -19,6 +21,8 @@ public sealed class RecoveryResetValidator : AbstractValidator<RecoveryResetRequ
     public RecoveryResetValidator()
     {
         RuleFor(x => x.Token).NotEmpty();
-        RuleFor(x => x.NewPassword).MinimumLength(8).MaximumLength(200);
+        RuleFor(x => x.NewPassword).MinimumLength(8)
+            .Must(p => Encoding.UTF8.GetByteCount(p) <= UserService.PasswordMaxBytes)
+            .WithMessage($"Password must be at most {UserService.PasswordMaxBytes} bytes.");
     }
 }

@@ -109,6 +109,20 @@ public sealed class UserServiceTests
 
         Assert.Equal("Auth.Unauthorized", result.Error.Code);
     }
+
+    [Fact]
+    public async Task Register_PasswordLongerThanBcryptLimit_Rejected()
+    {
+        // BUG-011b: bcrypt trunca a 72 bytes; sin tope el usuario creería que
+        // su contraseña larga cuenta entera.
+        var (service, _, _) = NewService();
+
+        var result = await service.RegisterAsync(
+            "ash", "ash@x.test", new string('x', 100), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("User.PasswordTooLong", result.Error.Code);
+    }
 }
 
 public sealed class RecoveryServiceTests

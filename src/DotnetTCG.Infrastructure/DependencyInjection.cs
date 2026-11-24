@@ -12,6 +12,7 @@ using DotnetTCG.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DotnetTCG.Infrastructure;
 
@@ -21,7 +22,10 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IClock, SystemClock>();
+        // TimeProvider como primitiva única: IClock lo adapta. TryAdd para que
+        // un composition root o un test pueda reemplazarlo (p. ej. FakeTimeProvider).
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IClock>(sp => new SystemClock(sp.GetRequiredService<TimeProvider>()));
         services.AddSingleton<Domain.Game.ICoinFlipService, Game.CoinFlipService>();
 
         var connectionString = configuration.GetConnectionString("Default");

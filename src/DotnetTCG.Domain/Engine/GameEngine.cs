@@ -1,6 +1,7 @@
 using DotnetTCG.Domain.Abilities;
 using DotnetTCG.Domain.Attacks;
 using DotnetTCG.Domain.Cards;
+using DotnetTCG.Domain.Common;
 using DotnetTCG.Domain.Engine.Handlers;
 using DotnetTCG.Domain.Enums;
 using DotnetTCG.Domain.Game;
@@ -75,9 +76,9 @@ public sealed class GameEngine
         return state;
     }
 
-    public void PerformMulligan(GameState state, int playerIndex)
+    public Error? PerformMulligan(GameState state, int playerIndex)
     {
-        _services.Setup.HandleMulligan(state, playerIndex, _services.Random);
+        return _services.Setup.HandleMulligan(state, playerIndex, _services.Random);
     }
 
     public GameActionResult Execute(GameState state, GameAction action)
@@ -141,7 +142,9 @@ public sealed class GameEngine
 
     private GameActionResult ExecuteSetup(GameState state, GameAction action, List<GameEvent> events)
     {
-        if (action.PlayerIndex != state.CurrentPlayerIndex)
+        // Concede es "en cualquier momento" (spec): no requiere ser el turno actual.
+        if (action.Type != GameActionType.Concede
+            && action.PlayerIndex != state.CurrentPlayerIndex)
             return new GameActionResult(false, "Turn.NotYourTurn", null, events);
 
         string? error = action.Type switch
@@ -152,6 +155,7 @@ public sealed class GameEngine
             GameActionType.PlayCard when action.Card is PokemonCard card
                 => _services.Setup.PlaceBench(state, action.PlayerIndex, card)?.Code,
             GameActionType.PassTurn => _services.Setup.ConfirmSetup(state, action.PlayerIndex)?.Code,
+            GameActionType.Concede => _turns.Concede(state, action.PlayerIndex),
             _ => "Setup.InvalidAction",
         };
 

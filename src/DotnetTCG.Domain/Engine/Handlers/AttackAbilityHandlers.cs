@@ -141,6 +141,12 @@ public sealed class AbilityHandler(EngineServices services)
         if (action.Target is null || action.AbilityName is null)
             return "Ability.TargetRequired";
 
+        // La habilidad la usa un Pokémon propio (FindAbilityUser sólo busca en
+        // el campo propio): el usuario que manda el cliente debe validarse.
+        var own = state.Players[action.PlayerIndex];
+        if (own.Active != action.Target && !own.Bench.Contains(action.Target))
+            return "Ability.ForeignTarget";
+
         var error = services.Rules.CanUseAbility(state, action.Target, action.AbilityName);
         if (error is not null)
             return error.Code;

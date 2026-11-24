@@ -149,9 +149,13 @@ public sealed class DeckService(
     public async Task<IReadOnlyList<DeckDto>> ListAsync(Guid ownerId, CancellationToken cancellationToken)
     {
         var entries = await decks.ListByOwnerAsync(ownerId, cancellationToken);
+        // Una sola query de catálogo para todos los mazos: antes era una por
+        // carta por mazo (N+1) — AUDIT-2026-11 PERF-001.
+        var catalog = await cards.GetByIdsAsync(
+            entries.SelectMany(e => e.Cards.Keys).Distinct(), cancellationToken);
         var dtos = new List<DeckDto>();
         foreach (var entry in entries)
-            dtos.Add(await ToDtoAsync(entry, cancellationToken));
+            dtos.Add(ToDto(entry, catalog));
         return dtos;
     }
 
@@ -284,10 +288,16 @@ public sealed class DeckService(
 
     private async Task<DeckDto> ToDtoAsync(DeckEntry entry, CancellationToken cancellationToken)
     {
+        var catalog = await cards.GetByIdsAsync(entry.Cards.Keys, cancellationToken);
+        return ToDto(entry, catalog);
+    }
+
+    private static DeckDto ToDto(DeckEntry entry, IReadOnlyDictionary<string, Card> catalog)
+    {
         var items = new List<DeckCardDto>();
         foreach (var (cardId, quantity) in entry.Cards)
         {
-            var card = await cards.GetByIdAsync(cardId, cancellationToken);
+            catalog.TryGetValue(cardId, out var card);
             items.Add(new DeckCardDto(cardId, card?.Name ?? cardId, quantity));
         }
 

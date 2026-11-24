@@ -46,14 +46,27 @@ public sealed class EfCardRepository(AppDbContext db) : ICardRepository
 
     public async Task UpsertRangeAsync(IEnumerable<Card> cards, CancellationToken cancellationToken)
     {
-        foreach (var card in cards)
+        // Una query para los existentes + un SaveChanges (antes: FindAsync por
+        // carta = N queries) — AUDIT-2026-11 PERF-002. Si el input trae el mismo
+        // id dos veces, gana el último.
+        var entities = cards.Select(CardMapper.ToEntity)
+            .GroupBy(e => e.Id)
+            .Select(g => g.Last())
+            .ToList();
+        var ids = entities.Select(e => e.Id).ToList();
+        // Query trackeada a propósito: si el contexto ya tiene la instancia (o
+        // viene de una llamada anterior), EF resuelve la identidad y no hay
+        // conflicto al hacer SetValues.
+        var existing = await db.Cards
+            .Where(c => ids.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, cancellationToken);
+
+        foreach (var entity in entities)
         {
-            var entity = CardMapper.ToEntity(card);
-            var existing = await db.Cards.FindAsync([entity.Id], cancellationToken);
-            if (existing is null)
-                db.Cards.Add(entity);
+            if (existing.TryGetValue(entity.Id, out var current))
+                db.Entry(current).CurrentValues.SetValues(entity);
             else
-                db.Entry(existing).CurrentValues.SetValues(entity);
+                db.Cards.Add(entity);
         }
 
         await db.SaveChangesAsync(cancellationToken);

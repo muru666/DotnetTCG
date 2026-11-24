@@ -7,7 +7,7 @@ public sealed class SystemClockTests
     [SkippableFact]
     public void UtcNow_IsCloseToUtcNow()
     {
-        var clock = new SystemClock();
+        var clock = new SystemClock(TimeProvider.System);
 
         var before = DateTimeOffset.UtcNow.AddSeconds(-5);
         var now = clock.UtcNow;

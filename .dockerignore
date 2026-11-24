@@ -3,3 +3,7 @@ obj/
 out/
 publish/
 .dockerignore
+# Secretos locales: nunca a la imagen de build (AUDIT-2026-11 BUG-012b)
+.env
+.env.*
+appsettings.*.local.json

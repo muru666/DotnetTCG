@@ -27,10 +27,12 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 
+// Un solo reloj de origen (TimeProvider.System); IClock lo adapta y los tests
+// pueden reemplazarlo con FakeTimeProvider.
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddSingleton<GameConnectionTracker>();
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>

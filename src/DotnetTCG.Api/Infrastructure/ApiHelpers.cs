@@ -31,8 +31,10 @@ public static class ErrorMapping
         if (code.EndsWith("NotFound", StringComparison.Ordinal))
             return StatusCodes.Status404NotFound;
         if (code is "Game.Conflict" or "Deck.DuplicateName" or "Deck.InUse"
-            or "User.DuplicateUsername" or "User.DuplicateEmail")
+            or "User.DuplicateUsername" or "User.DuplicateEmail" or "Game.Full")
             return StatusCodes.Status409Conflict;
+        if (code == "Recovery.Throttled")
+            return StatusCodes.Status429TooManyRequests;
         return StatusCodes.Status400BadRequest;
     }
 }

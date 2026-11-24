@@ -546,4 +546,158 @@ public sealed class AuditFixesTests
         var err = new RuleValidator().CanEvolve(state, board.Active, evolution);
         Assert.Equal("Evolve.JustPlayed", err?.Code);
     }
+
+    // ---------------------------------------------------------- BUG-D017
+    [Fact]
+    public void CanRetreat_UnattachedEnergy_Rejected()
+    {
+        var state = NewState();
+        var unattached = TestCards.BasicEnergy("ghost", PokemonType.Water);
+
+        var err = new RuleValidator().CanRetreat(state, 0, [unattached]);
+
+        Assert.Equal("Retreat.EnergyNotAttached", err?.Code);
+    }
+
+    [Fact]
+    public void OptionalDiscard_WithUnattachedEnergy_Rejected()
+    {
+        // El +30 de Electron Crush exige descartar energía adjunta real.
+        var state = ElectronCrushState();
+        var engine = SeededEngine();
+        var pending = StartElectronCrush(state, engine, out _);
+        var ghost = TestCards.BasicEnergy("ghost", PokemonType.Water);
+
+        var resume = engine.Execute(state, new GameAction(GameActionType.Attack, 0,
+            Attack: ElectronCrush(), ChoiceId: pending.ChoiceId,
+            SelectedOptionIds: ["yes"], EnergiesToDiscard: [ghost]));
+
+        Assert.False(resume.Success);
+        Assert.Equal("Attack.EnergyNotAttached", resume.Error);
+        Assert.Equal(2, state.Players[0].Active!.AttachedEnergies.Count);
+        Assert.Equal(0, state.Players[1].Active!.TotalDamage);
+    }
+
+    // ---------------------------------------------------------- BUG-D018
+    [Fact]
+    public void PlayPokemon_NotInHand_Rejected()
+    {
+        var state = NewState();
+        var board = state.Players[0];
+        var ghost = TestCards.BasicPokemon("ghost", "Ghost", 60);
+        var engine = SeededEngine();
+
+        var result = engine.Execute(state, new GameAction(GameActionType.PlayCard, 0, Card: ghost));
+
+        Assert.False(result.Success);
+        Assert.Equal("Play.NotInHand", result.Error);
+        Assert.Empty(board.Bench);
+    }
+
+    [Fact]
+    public void AttachEnergy_NotInHand_Rejected()
+    {
+        var state = NewState();
+        var board = state.Players[0];
+        var ghost = TestCards.BasicEnergy("ghost", PokemonType.Fire);
+        var engine = SeededEngine();
+
+        var result = engine.Execute(state,
+            new GameAction(GameActionType.AttachEnergy, 0, Card: ghost, Target: board.Active));
+
+        Assert.False(result.Success);
+        Assert.Equal("Energy.NotInHand", result.Error);
+        Assert.Empty(board.Active!.AttachedEnergies);
+    }
+
+    [Fact]
+    public void Evolve_ForeignTarget_Rejected()
+    {
+        var state = NewState();
+        var opponent = state.Players[1].Active!;
+        var evolution = new PokemonCard("evo", "Evo", [SubType.Stage1], [], "xy1",
+            string.Empty, 90, 1, EvolvesFrom: opponent.Card.Name, PokemonType.Colorless, [], [], [], []);
+        state.Players[0].AddToHand(evolution);
+        var engine = SeededEngine();
+
+        var result = engine.Execute(state,
+            new GameAction(GameActionType.Evolve, 0, Card: evolution, Target: opponent));
+
+        Assert.False(result.Success);
+        Assert.Equal("Evolve.ForeignTarget", result.Error);
+    }
+
+    [Fact]
+    public void AttachTool_ForeignTarget_Rejected()
+    {
+        var state = NewState();
+        var board = state.Players[0];
+        var tool = new TrainerCard("mb", "Muscle Band", [SubType.Tool], [],
+            "xy1", string.Empty, SubType.Tool);
+        board.AddToHand(tool);
+        var opponent = state.Players[1].Active!;
+        var engine = SeededEngine();
+
+        var result = engine.Execute(state,
+            new GameAction(GameActionType.PlayCard, 0, Card: tool, Target: opponent));
+
+        Assert.False(result.Success);
+        Assert.Equal("Trainer.ForeignTarget", result.Error);
+        Assert.Contains(tool, board.Hand);
+    }
+
+    [Fact]
+    public void UseAbility_ForeignUser_Rejected()
+    {
+        var state = NewState();
+        var opponent = state.Players[1].Active!;
+        var engine = SeededEngine();
+
+        var result = engine.Execute(state, new GameAction(GameActionType.UseAbility, 0,
+            Target: opponent, AbilityName: "Any Ability"));
+
+        Assert.False(result.Success);
+        Assert.Equal("Ability.ForeignTarget", result.Error);
+    }
+
+    // ---------------------------------------------------------- BUG-D019
+    [Fact]
+    public void PerformMulligan_AfterConfirm_Rejected()
+    {
+        var state = new GameState(new PlayerBoard(), new PlayerBoard(), 0, suddenDeath: false);
+        state.ConfirmSetup(0);
+        var engine = SeededEngine();
+
+        var error = engine.PerformMulligan(state, 0);
+
+        Assert.NotNull(error);
+        Assert.Equal("Setup.AlreadyConfirmed", error!.Code);
+    }
+
+    [Fact]
+    public void PerformMulligan_OutsideSetup_Rejected()
+    {
+        var state = NewState(); // InProgress
+        var engine = SeededEngine();
+
+        var error = engine.PerformMulligan(state, 0);
+
+        Assert.NotNull(error);
+        Assert.Equal("Game.NotJoinable", error!.Code);
+    }
+
+    // ---------------------------------------------------------- BUG-D020
+    [Fact]
+    public void Concede_IsAllowedDuringSetup_EvenOutOfTurn()
+    {
+        var state = new GameState(new PlayerBoard(), new PlayerBoard(), 0, suddenDeath: false);
+        var engine = SeededEngine();
+
+        // El jugador1 no es el actual (0) y aun así puede rendirse.
+        var result = engine.Execute(state, new GameAction(GameActionType.Concede, 1));
+
+        Assert.True(result.Success, result.Error);
+        Assert.Equal(GameStatus.Finished, state.Status);
+        Assert.Equal(0, state.WinnerPlayerIndex);
+    }
 }

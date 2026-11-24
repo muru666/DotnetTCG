@@ -11,13 +11,23 @@ internal sealed class FakeCardRepository(Dictionary<string, Card>? cards = null)
 
     public int UpsertedCount { get; private set; }
 
+    // Contadores para el test de batching (PERF-001).
+    public int GetByIdCalls { get; set; }
+    public int GetByIdsCalls { get; set; }
+
     public Task<Card?> GetByIdAsync(string id, CancellationToken cancellationToken)
-        => Task.FromResult(_cards.GetValueOrDefault(id));
+    {
+        GetByIdCalls++;
+        return Task.FromResult(_cards.GetValueOrDefault(id));
+    }
 
     public Task<IReadOnlyDictionary<string, Card>> GetByIdsAsync(
         IEnumerable<string> ids, CancellationToken cancellationToken)
-        => Task.FromResult<IReadOnlyDictionary<string, Card>>(
+    {
+        GetByIdsCalls++;
+        return Task.FromResult<IReadOnlyDictionary<string, Card>>(
             ids.Distinct().Where(_cards.ContainsKey).ToDictionary(id => id, id => _cards[id]));
+    }
 
     public Task<IReadOnlyList<Card>> SearchAsync(
         string? name, PokemonType? type, SuperType? supertype,

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using DotnetTCG.Application.Common.Interfaces;
+using DotnetTCG.Application.Users;
 using DotnetTCG.Domain.Common;
 
 namespace DotnetTCG.Application.Auth;
@@ -52,6 +53,10 @@ public sealed class RecoveryService(
     {
         if (newPassword.Length < 8)
             return Result<bool>.Failure(new Error("User.WeakPassword", "Password needs 8+ chars."));
+        // bcrypt trunca a 72 bytes: mejor rechazar que prometer protección falsa.
+        if (Encoding.UTF8.GetByteCount(newPassword) > UserService.PasswordMaxBytes)
+            return Result<bool>.Failure(new Error("User.PasswordTooLong",
+                $"Password must be at most {UserService.PasswordMaxBytes} bytes."));
 
         var stored = await tokens.FindByHashAsync(Hash(token), cancellationToken);
         if (stored is null || stored.ExpiresAt <= clock.UtcNow)

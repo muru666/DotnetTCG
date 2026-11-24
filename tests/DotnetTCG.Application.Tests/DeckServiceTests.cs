@@ -224,4 +224,28 @@ public sealed class DeckServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal("Deck.InUse", result.Error.Code);
     }
+
+    [Fact]
+    public async Task ListAsync_BatchesCardLookups_IntoSingleQuery()
+    {
+        // PERF-001: antes una query por carta por mazo (N+1).
+        var cards = new FakeCardRepository(TestCardFactory.Catalog());
+        var decks = new FakeDeckRepository();
+        var service = new DeckService(decks, cards, new RuleValidator());
+        var owner = Guid.NewGuid();
+        foreach (var name in new[] { "Uno", "Dos" })
+        {
+            var created = await service.CreateAsync(owner, name, CancellationToken.None);
+            await service.AddCardAsync(created.Value!.Id, owner, "xy1-p0", 2, CancellationToken.None);
+            await service.AddCardAsync(created.Value!.Id, owner, "xy1-e", 3, CancellationToken.None);
+        }
+
+        cards.GetByIdCalls = 0;
+        cards.GetByIdsCalls = 0;
+        var result = await service.ListAsync(owner, CancellationToken.None);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(1, cards.GetByIdsCalls);
+        Assert.Equal(0, cards.GetByIdCalls);
+    }
 }

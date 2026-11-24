@@ -58,7 +58,10 @@ public sealed class TrainerHandler(EngineServices services)
     {
         if (target is null)
             return "Trainer.ToolNoTarget";
-        board.RemoveFromHand(tool);
+        if (board.Active != target && !board.Bench.Contains(target))
+            return "Trainer.ForeignTarget";
+        if (!board.RemoveFromHand(tool))
+            return "Trainer.NotInHand";
         target.AttachTool(tool);
         var behavior = TrainerCatalog.Find(tool.Name);
         if (behavior?.ToolModifier is not null)

@@ -1,3 +1,4 @@
+using System.Text;
 using DotnetTCG.Application.Common.Interfaces;
 using DotnetTCG.Application.Decks;
 using DotnetTCG.Domain.Common;
@@ -11,6 +12,9 @@ public sealed class UserService(
     IClock clock,
     DeckService decks)
 {
+    /// <summary>Límite real de BCrypt: el password se trunca a 72 bytes.</summary>
+    public const int PasswordMaxBytes = 72;
+
     public async Task<Result<UserDto>> RegisterAsync(
         string username, string email, string password, CancellationToken cancellationToken)
     {
@@ -18,6 +22,11 @@ public sealed class UserService(
         email = email.Trim().ToLowerInvariant();
         if (username.Length < 3 || username.Length > 50)
             return Result<UserDto>.Failure(new Error("User.BadUsername", "Username must be 3-50 chars."));
+        // bcrypt trunca el password a 72 bytes: sin tope, el usuario creería que
+        // su contraseña larga cuenta entera (AUDIT-2026-11 BUG-011b).
+        if (Encoding.UTF8.GetByteCount(password) > PasswordMaxBytes)
+            return Result<UserDto>.Failure(
+                new Error("User.PasswordTooLong", $"Password must be at most {PasswordMaxBytes} bytes."));
         if (!email.Contains('@') || email.Length > 200)
             return Result<UserDto>.Failure(new Error("User.BadEmail", "Email is invalid."));
         if (password.Length < 8)
