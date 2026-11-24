@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Subject, of } from 'rxjs';
 import { vi } from 'vitest';
 import { GameLobbyPageComponent } from './game-lobby-page';
@@ -44,6 +46,8 @@ function setup() {
 
   TestBed.configureTestingModule({
     providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
       { provide: ActivatedRoute, useValue: route },
       { provide: Router, useValue: router },
       { provide: GameSignalService, useValue: signalService },
@@ -83,5 +87,27 @@ describe('GameLobbyPageComponent ngDestroy', () => {
     component.ngOnDestroy();
 
     expect(signalService.leaveLobby).toHaveBeenCalledWith(GAME_ID);
+  });
+
+  it('al volver a público limpia el password (password: "") (FE-004)', async () => {
+    const { component, flush } = setup();
+    await flush();
+    const httpMock = TestBed.inject(HttpTestingController);
+    const internals = component as unknown as {
+      isPublicSetting: { set(value: boolean): void };
+      togglePublic(): void;
+    };
+
+    // Estado actual "privada": alternar a pública debe mandar password '' para
+    // limpiar el hash (antes mandaba null y el backend lo conservaba).
+    internals.isPublicSetting.set(false);
+    internals.togglePublic();
+
+    const req = httpMock.expectOne(
+      r => r.url.includes('/settings') && r.method === 'PUT');
+    expect(req.request.body.isPublic).toBe(true);
+    expect(req.request.body.password).toBe('');
+    req.flush({});
+    httpMock.verify();
   });
 });

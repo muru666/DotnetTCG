@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, of, EMPTY } from 'rxjs';
-import { map, tap, catchError, switchMap } from 'rxjs/operators';
+import { Observable, forkJoin, from, of, EMPTY } from 'rxjs';
+import { map, tap, catchError, switchMap, concatMap, toArray } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { extractHttpError } from '../../utils/http-error';
 
@@ -365,7 +365,13 @@ export class DeckBuilderService {
           }
         }
         if (ops.length === 0) return of(server);
-        return forkJoin(ops).pipe(switchMap(() => this.http.get<BackendDeck>(base)));
+        // Secuencial (from + concatMap): cada mutación es read-modify-write sobre
+        // el mismo mazo; en paralelo (forkJoin) se pisaban y se perdían cambios
+        // en silencio mientras el toast decía "Mazo guardado".
+        return from(ops).pipe(
+          concatMap(op => op),
+          toArray(),
+          switchMap(() => this.http.get<BackendDeck>(base)));
       })
     );
   }

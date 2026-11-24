@@ -17,6 +17,8 @@ export interface GameListItem {
   /** El backend no expone fecha de creación en la lista de lobbies. */
   createdAt: string | null;
   isPublic: boolean;
+  /** Si el lobby tiene password (el FE lo pide por acá, no por isPublic). */
+  hasPassword: boolean;
   acceptsSpectators: boolean;
   creatorUsername: string | null;
 }
@@ -108,6 +110,7 @@ interface BackendLobby {
   creatorId: string;
   isPublic: boolean;
   acceptsSpectators: boolean;
+  hasPassword?: boolean;
   players: BackendLobbyPlayer[];
 }
 
@@ -344,6 +347,7 @@ export class GameService {
           status: 'IN_LOBBY',
           createdAt: null,
           isPublic: l.isPublic,
+          hasPassword: l.hasPassword ?? false,
           acceptsSpectators: l.acceptsSpectators,
           creatorUsername: l.players.find(p => p.userId === l.creatorId)?.username ?? null
         }))),
@@ -374,6 +378,8 @@ export class GameService {
         status: mapGameStatus(g.status),
         createdAt: null,
         isPublic: true,
+        // Partidas en curso: la contraseña del lobby ya no aplica para retomar.
+        hasPassword: false,
         acceptsSpectators: true,
         creatorUsername: null
       }))),

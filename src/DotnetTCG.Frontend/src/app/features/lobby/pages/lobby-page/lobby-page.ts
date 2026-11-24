@@ -129,7 +129,9 @@ export class GameSearcherComponent implements OnInit, OnDestroy {
       this.router.navigate(['/lobby', game.gameId], { state: { spectator: true } });
       return;
     }
-    if (game.isPublic === false) {
+    // Por hasPassword, no por isPublic: hay lobbies privados sin contraseña y
+    // (con el fix de settings) públicos con hash residual.
+    if (game.hasPassword) {
       this.passwordDialogGameId.set(game.gameId);
       this.passwordInput.set('');
       this.passwordError.set(null);

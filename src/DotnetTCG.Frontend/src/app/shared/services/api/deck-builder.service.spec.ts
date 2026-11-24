@@ -71,16 +71,16 @@ describe('DeckBuilderService', () => {
       { cardId: 'bulbasaur', quantity: 2 },
     ]));
 
-    // diff: alta (POST), cambio de cantidad (PUT) y baja (DELETE)
-    const post = httpMock.expectOne(`${API}/v1/decks/deck-1/cards`);
-    expect(post.request.method).toBe('POST');
-    expect(post.request.body).toEqual({ cardId: 'charmander', quantity: 3 });
-    post.flush(null);
-
+    // diff en orden secuencial: PUT (cantidad), POST (alta) y DELETE (baja)
     const put = httpMock.expectOne(`${API}/v1/decks/deck-1/cards/raichu`);
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual({ quantity: 2 });
     put.flush(null);
+
+    const post = httpMock.expectOne(`${API}/v1/decks/deck-1/cards`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ cardId: 'charmander', quantity: 3 });
+    post.flush(null);
 
     const del = httpMock.expectOne(`${API}/v1/decks/deck-1/cards/bulbasaur`);
     expect(del.request.method).toBe('DELETE');
@@ -114,5 +114,42 @@ describe('DeckBuilderService', () => {
     httpMock.expectOne(`${API}/v1/cards/pikachu`).flush(detailCard('pikachu'));
 
     // cualquier petición extra a /cards haría fallar httpMock.verify()
+  });
+
+  it('saveDeck ejecuta las mutaciones en secuencia (una en vuelo a la vez)', () => {
+    // FE-005: con forkJoin las N mutaciones volaban juntas sobre endpoints
+    // read-modify-write y se pisaban entre sí.
+    let saved: Deck | null = null;
+    service.saveDeck('deck-1', 'Mazo', [
+      { cardId: 'raichu', quantity: 2 },      // PUT
+      { cardId: 'charmander', quantity: 3 },  // POST
+    ]).subscribe(d => (saved = d));
+
+    httpMock.expectOne(`${API}/v1/decks/deck-1`).flush(backendDeck([
+      { cardId: 'raichu', quantity: 1 },
+    ]));
+    httpMock.expectOne(`${API}/v1/decks/deck-1`).flush(backendDeck([
+      { cardId: 'raichu', quantity: 1 },
+    ]));
+
+    // Solo UNA mutación en vuelo: con forkJoin habría dos pendientes acá.
+    let pending = httpMock.match(() => true);
+    expect(pending.length).toBe(1);
+    expect(pending[0].request.method).toBe('PUT');
+    pending[0].flush(null);
+
+    pending = httpMock.match(() => true);
+    expect(pending.length).toBe(1);
+    expect(pending[0].request.method).toBe('POST');
+    pending[0].flush(null);
+
+    httpMock.expectOne(`${API}/v1/decks/deck-1`).flush(backendDeck([
+      { cardId: 'raichu', quantity: 2 },
+      { cardId: 'charmander', quantity: 3 },
+    ]));
+    httpMock.expectOne(`${API}/v1/cards/raichu`).flush(detailCard('raichu'));
+    httpMock.expectOne(`${API}/v1/cards/charmander`).flush(detailCard('charmander'));
+
+    expect(saved).not.toBeNull();
   });
 });

@@ -226,7 +226,9 @@ export class GameLobbyPageComponent implements OnInit, OnDestroy {
     const gameId = this.gameId();
     if (!gameId) return;
     if (newValue) {
-      this.updateSettings(gameId, { isPublic: true });
+      // password '' limpia el hash en el backend: sin esto la partida seguía
+      // exigiendo la contraseña vieja aunque decía "pública".
+      this.updateSettings(gameId, { isPublic: true, password: '' });
       this.passwordInput.set('');
       this.passwordSaved.set(false);
     } else {

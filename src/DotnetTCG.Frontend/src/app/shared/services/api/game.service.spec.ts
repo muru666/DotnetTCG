@@ -99,4 +99,32 @@ describe('GameService', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(players).toEqual(['u1', 'u2']);
   });
+
+  it('listGames expone hasPassword del backend (FE-004)', () => {
+    service = TestBed.inject(GameService);
+    let items: { gameId: string; hasPassword: boolean }[] = [];
+    service.listGames().subscribe(v => (items = v));
+
+    httpMock.expectOne(`${API}/v1/games`).flush([
+      {
+        id: 'g1',
+        creatorId: 'u1',
+        isPublic: true,
+        acceptsSpectators: true,
+        hasPassword: true,
+        players: [{ userId: 'u1', order: 0, deckId: null, isReady: false, username: 'ash' }],
+      },
+      {
+        id: 'g2',
+        creatorId: 'u2',
+        isPublic: false,
+        acceptsSpectators: true,
+        hasPassword: false,
+        players: [{ userId: 'u2', order: 0, deckId: null, isReady: false, username: 'misty' }],
+      },
+    ]);
+
+    expect(items[0].hasPassword).toBe(true);
+    expect(items[1].hasPassword).toBe(false);
+  });
 });
